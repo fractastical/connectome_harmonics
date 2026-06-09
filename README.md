@@ -2,7 +2,9 @@
 
 Educational simulator for **graph Laplacian harmonics** on brain-like connectivity networks — inspired by [Atasoy et al., 2016](https://www.nature.com/articles/ncomms10340).
 
-**Live demo:** https://cimcai.github.io/connectome_harmonics/
+**Live demo:** https://cimc.ai/connectome_harmonics/ (org custom domain; `cimcai.github.io` redirects here)
+
+> If that URL shows the [CIMC homepage](https://cimc.ai/) instead of the simulator, GitHub Pages for this repo is not deployed yet. Fix: repo **Settings → Pages → Build and deployment → Source: GitHub Actions**, then re-run the **Deploy GitHub Pages** workflow under **Actions**. First deploy may require approving the `github-pages` environment.
 
 The graph Laplacian \(L = I - D^{-1/2} W D^{-1/2}\) turns a connectome into a geometry. Its eigenvectors are spatial **harmonics**: low modes are broad, bilateral patterns; high modes are finer, more localized waves.
 
@@ -18,7 +20,7 @@ The graph Laplacian \(L = I - D^{-1/2} W D^{-1/2}\) turns a connectome into a ge
 
 ## Quick start
 
-**Browser:** open [index.html](index.html) locally, or visit the [live demo](https://cimcai.github.io/connectome_harmonics/). Features a **mode tour**, literature references, and HCP vs toy data toggle.
+**Browser:** open [index.html](index.html) locally, or visit https://cimc.ai/connectome_harmonics/. Features a **mode tour**, literature references, and HCP vs toy data toggle.
 
 **Python animation:**
 ```bash
