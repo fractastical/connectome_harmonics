@@ -142,6 +142,29 @@
     </div>
 
     <div class="card">
+      <h2>Geometric latent space</h2>
+      <p class="small">The harmonics aren't just waves — they're <strong>coordinate axes</strong>. Each region gets a position (v<sub>a,i</sub>, v<sub>b,i</sub>) in a low-dimensional embedding (this is a Laplacian eigenmap / diffusion-map latent space). If a smooth geometry exists, the seven <a href="https://pubmed.ncbi.nlm.nih.gov/21653723/" target="_blank" rel="noopener">Yeo functional networks</a> should separate into a continuous layout — without ever telling the algorithm what they are.</p>
+      <div id="latentWrap" style="margin-top:8px;">
+        <canvas id="latentChart" style="width:100%;height:300px;display:block;cursor:crosshair;border-radius:12px;background:#0b0f16;"></canvas>
+        <div class="row" style="margin-top:10px;align-items:center;">
+          <label style="margin:0;">x-axis
+            <select id="latentX" style="margin-top:4px;"></select>
+          </label>
+          <label style="margin:0;">y-axis
+            <select id="latentY" style="margin-top:4px;"></select>
+          </label>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <button id="latentColorBtn">color: network</button>
+          <button id="latentGradient">show principal gradient</button>
+        </div>
+        <div id="latentLegend" class="chips" style="margin-top:10px;"></div>
+        <p class="small" id="latentCaption" style="margin-top:8px;color:#9fb0c6;"></p>
+      </div>
+      <p class="small" id="latentUnavailable" style="display:none;color:#9fb0c6;">Load the <strong>HCP structural SC</strong> dataset (top) to explore its latent space — the toy graph has no network labels.</p>
+    </div>
+
+    <div class="card">
       <h2>LSD &amp; connectome harmonics</h2>
       <p class="small">The paper <a href="https://www.nature.com/articles/s41598-017-17546-0" target="_blank" rel="noopener">Atasoy et al. 2017 (Scientific Reports)</a> — often discussed as “connectome-specific harmonic waves under LSD” — does <strong>not</strong> publish a downloadable harmonic-power dataset. It reports findings from decomposing LSD/placebo fMRI:</p>
       <div class="lsd-callout small">
@@ -245,6 +268,18 @@ let LSD = null;            // parsed lsd_harmonic_spectra.json
 let lsdCondition = 'lsd';  // 'lsd' | 'placebo'
 let lsdWeights = null;     // normalized weights for current condition
 let lsdPhases = null;      // per-mode phase offsets for animation
+
+const NETWORK_COLORS = {
+  Vis:'#b14cff', SomMot:'#5aa9ff', DorsAttn:'#4fd16a', SalVentAttn:'#ff5ce0',
+  Limbic:'#e8d264', Cont:'#ffa64d', Default:'#ff6b6b', NA:'#8190a3',
+};
+const NETWORK_FULL = {
+  Vis:'Visual', SomMot:'Somatomotor', DorsAttn:'Dorsal attention',
+  SalVentAttn:'Salience / ventral attn', Limbic:'Limbic', Cont:'Frontoparietal control',
+  Default:'Default mode',
+};
+let latentColorMode = 'network'; // 'network' | 'hemi' | 'mode'
+let latentGeom = null;
 
 function rand(){ rngState = (1664525 * rngState + 1013904223) >>> 0; return rngState / 4294967296; }
 
@@ -479,6 +514,154 @@ function drawLsdChart(){
   lsdChartGeom = { ml, mr, pw, n };
 }
 
+function hasNetworks(){ return !!(DATA && DATA.networks && DATA.networks.length === N); }
+
+function buildLatentControls(){
+  const xs = document.getElementById('latentX');
+  const ys = document.getElementById('latentY');
+  if(!xs || !ys || !DATA) return;
+  const n = DATA.modes.length;
+  const opts = (sel, val) => {
+    sel.innerHTML = '';
+    for(let k=1;k<=n;k++){
+      const o = document.createElement('option');
+      o.value = k; o.textContent = 'mode ' + k;
+      sel.appendChild(o);
+    }
+    sel.value = val;
+  };
+  opts(xs, 1); opts(ys, 2);
+  buildLatentLegend();
+}
+
+function buildLatentLegend(){
+  const wrap = document.getElementById('latentLegend');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  if(latentColorMode === 'network'){
+    for(const key of ['Vis','SomMot','DorsAttn','SalVentAttn','Limbic','Cont','Default']){
+      const tag = document.createElement('span');
+      tag.className = 'small';
+      tag.style.cssText = 'display:inline-flex;align-items:center;gap:5px;margin-right:8px;';
+      tag.innerHTML = `<span style="width:10px;height:10px;border-radius:50%;background:${NETWORK_COLORS[key]};display:inline-block;"></span>${NETWORK_FULL[key]}`;
+      wrap.appendChild(tag);
+    }
+  } else if(latentColorMode === 'hemi'){
+    for(const [k,c] of [['Left','#5aa9ff'],['Right','#ff6b6b']]){
+      const tag = document.createElement('span');
+      tag.className = 'small';
+      tag.style.cssText = 'display:inline-flex;align-items:center;gap:5px;margin-right:10px;';
+      tag.innerHTML = `<span style="width:10px;height:10px;border-radius:50%;background:${c};display:inline-block;"></span>${k} hemisphere`;
+      wrap.appendChild(tag);
+    }
+  } else {
+    const tag = document.createElement('span');
+    tag.className = 'small';
+    tag.innerHTML = 'color = harmonic value along x-axis &nbsp; <span style="color:#3b52ac;">−</span> … <span style="color:#bf2820;">+</span>';
+    wrap.appendChild(tag);
+  }
+}
+
+function latentDotColor(i, vx){
+  if(latentColorMode === 'network') return NETWORK_COLORS[DATA.networks[i]] || '#8190a3';
+  if(latentColorMode === 'hemi') return (DATA.hemi && DATA.hemi[i] === 'RH') ? '#ff6b6b' : '#5aa9ff';
+  return colorMap(vx);
+}
+
+function drawLatentSpace(){
+  const cv = document.getElementById('latentChart');
+  if(!cv || !DATA || !hasNetworks()) return;
+  const xs = document.getElementById('latentX'), ys = document.getElementById('latentY');
+  const ax = Math.max(0, Number(xs.value)-1), ay = Math.max(0, Number(ys.value)-1);
+  const vx = DATA.modes[ax], vy = DATA.modes[ay];
+  const dpr = window.devicePixelRatio || 1;
+  const rect = cv.getBoundingClientRect();
+  const W = Math.max(1, Math.floor(rect.width*dpr)), H = Math.max(1, Math.floor(rect.height*dpr));
+  if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
+  const g = cv.getContext('2d');
+  g.clearRect(0,0,W,H);
+  const m = 14*dpr, pw = W-2*m, ph = H-2*m;
+  const ext = arr => { let lo=1e9,hi=-1e9; for(const x of arr){ lo=Math.min(lo,x); hi=Math.max(hi,x);} const pad=(hi-lo)*0.08||0.1; return [lo-pad, hi+pad]; };
+  const [xlo,xhi] = ext(vx), [ylo,yhi] = ext(vy);
+  const px = v => m + ((v-xlo)/(xhi-xlo))*pw;
+  const py = v => m + ph - ((v-ylo)/(yhi-ylo))*ph;
+  // zero axes
+  g.strokeStyle='rgba(255,255,255,0.10)'; g.lineWidth=1*dpr;
+  if(xlo<0&&xhi>0){ g.beginPath(); g.moveTo(px(0),m); g.lineTo(px(0),m+ph); g.stroke(); }
+  if(ylo<0&&yhi>0){ g.beginPath(); g.moveTo(m,py(0)); g.lineTo(m+pw,py(0)); g.stroke(); }
+  // points
+  for(let i=0;i<N;i++){
+    g.beginPath(); g.arc(px(vx[i]), py(vy[i]), 3.1*dpr, 0, 2*Math.PI);
+    g.fillStyle = latentDotColor(i, vx[i]); g.globalAlpha = 0.85; g.fill();
+  }
+  g.globalAlpha = 1;
+  // axis labels
+  g.fillStyle='#6f7f96'; g.font=`${10*dpr}px ui-monospace, monospace`;
+  g.fillText(`mode ${ax+1}  (λ=${DATA.eigvals[ax].toFixed(3)}) →`, m+2*dpr, H-3*dpr);
+  g.save(); g.translate(11*dpr, m+4*dpr); g.rotate(Math.PI/2);
+  g.fillText(`mode ${ay+1}  (λ=${DATA.eigvals[ay].toFixed(3)}) →`, 0, 0); g.restore();
+  latentGeom = { ax, ay };
+  updateLatentCaption(ax);
+}
+
+function updateLatentCaption(ax){
+  const cap = document.getElementById('latentCaption');
+  if(!cap || !hasNetworks()) return;
+  const sums = {}, counts = {};
+  for(let i=0;i<N;i++){
+    const net = DATA.networks[i];
+    sums[net] = (sums[net]||0) + DATA.modes[ax][i];
+    counts[net] = (counts[net]||0) + 1;
+  }
+  const order = Object.keys(sums)
+    .filter(k => k !== 'NA')
+    .map(k => [k, sums[k]/counts[k]])
+    .sort((a,b)=>a[1]-b[1]);
+  const chain = order.map(o => NETWORK_FULL[o[0]] || o[0]).join(' → ');
+  cap.innerHTML = `Networks ordered along mode ${ax+1} (− to +): <strong>${chain}</strong>. They were never labeled for the algorithm — this ordering emerges purely from structural connectivity, i.e. a real geometric latent axis.`;
+}
+
+function wireLatentControls(){
+  const xs = document.getElementById('latentX'), ys = document.getElementById('latentY');
+  const colorBtn = document.getElementById('latentColorBtn');
+  const gradBtn = document.getElementById('latentGradient');
+  if(xs && !xs.dataset.wired){ xs.dataset.wired='1'; xs.addEventListener('change', drawLatentSpace); }
+  if(ys && !ys.dataset.wired){ ys.dataset.wired='1'; ys.addEventListener('change', drawLatentSpace); }
+  if(colorBtn && !colorBtn.dataset.wired){
+    colorBtn.dataset.wired='1';
+    colorBtn.addEventListener('click', () => {
+      latentColorMode = latentColorMode==='network' ? 'hemi' : latentColorMode==='hemi' ? 'mode' : 'network';
+      colorBtn.textContent = 'color: ' + latentColorMode;
+      buildLatentLegend(); drawLatentSpace();
+    });
+  }
+  if(gradBtn && !gradBtn.dataset.wired){
+    gradBtn.dataset.wired='1';
+    gradBtn.addEventListener('click', () => {
+      xs.value = 1; ys.value = 2;
+      latentColorMode = 'network';
+      document.getElementById('latentColorBtn').textContent = 'color: network';
+      buildLatentLegend(); drawLatentSpace();
+    });
+  }
+}
+
+function refreshLatentSpace(){
+  const wrap = document.getElementById('latentWrap');
+  const un = document.getElementById('latentUnavailable');
+  if(hasNetworks()){
+    if(wrap) wrap.style.display = 'block';
+    if(un) un.style.display = 'none';
+    buildLatentControls();
+    wireLatentControls();
+    drawLatentSpace();
+  } else {
+    if(wrap) wrap.style.display = 'none';
+    if(un) un.style.display = 'block';
+  }
+}
+window.addEventListener('resize', () => { if(hasNetworks()) drawLatentSpace(); });
+
 function updateTourText(){
   const modeNum = Number(ui.mode.value);
   const lam = DATA.eigvals[modeNum - 1];
@@ -600,6 +783,7 @@ async function loadDataset(path){
     buildChips();
     resize();
     syncLabels();
+    refreshLatentSpace();
   } catch (err) {
     ui.tourNote.textContent = `Failed to load ${path}: ${err.message}`;
   } finally {

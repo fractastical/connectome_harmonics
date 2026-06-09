@@ -88,17 +88,22 @@ def load_sc_matrix(source: str, sc_path: Path | None) -> np.ndarray:
     return w
 
 
-def load_schaefer_centroids() -> np.ndarray:
+def load_schaefer_centroids() -> tuple[np.ndarray, list[str], list[str]]:
+    """Return (coords RAS, Yeo-7 network per parcel, hemisphere per parcel)."""
     path = download(SCHAEFER_CENTROIDS_URL, "Schaefer2018_400_centroids.csv")
-    coords = []
+    coords, networks, hemis = [], [], []
     with path.open(newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
             coords.append([float(row["R"]), float(row["A"]), float(row["S"])])
+            # ROI Name looks like "7Networks_LH_Vis_1"
+            parts = row["ROI Name"].split("_")
+            hemis.append(parts[1] if len(parts) > 1 else "NA")
+            networks.append(parts[2] if len(parts) > 2 else "NA")
     coords = np.asarray(coords, dtype=np.float64)
     if coords.shape != (400, 3):
         raise SystemExit(f"Expected 400 centroid rows, got {coords.shape[0]}")
-    return coords
+    return coords, networks, hemis
 
 
 def project_nodes(coords_ras: np.ndarray) -> np.ndarray:
@@ -155,6 +160,8 @@ def normalized_laplacian_modes(w: np.ndarray, n_modes: int) -> tuple[np.ndarray,
 def build_payload(
     w: np.ndarray,
     nodes: np.ndarray,
+    networks: list[str],
+    hemis: list[str],
     n_modes: int,
     edge_percentile: float,
     source: str,
@@ -167,6 +174,8 @@ def build_payload(
         "edges": edges,
         "eigvals": np.round(eigvals, 6).tolist(),
         "modes": np.round(eigvecs.T, 4).tolist(),
+        "networks": networks,
+        "hemi": hemis,
         "meta": {
             "node_count": int(nodes.shape[0]),
             "edge_count": len(edges),
@@ -177,9 +186,10 @@ def build_payload(
             "laplacian": "normalized (I - D^{-1/2} W D^{-1/2})",
             "edge_percentile": edge_percentile,
             "description": (
-                "HCP-YA group-average Schaefer-400 structural connectome. "
-                "Modes are eigenvectors of the normalized graph Laplacian. "
-                "Educational visualization — not clinical data."
+                "HCP-YA group-average Schaefer-400 structural connectome "
+                "(real diffusion-MRI tractography). Modes are eigenvectors of the "
+                "normalized graph Laplacian. Group-average research data — not "
+                "individual or diagnostic."
             ),
         },
     }
@@ -214,10 +224,12 @@ def main() -> None:
     args = parser.parse_args()
 
     w = load_sc_matrix(args.source, args.sc_path)
-    coords = load_schaefer_centroids()
+    coords, networks, hemis = load_schaefer_centroids()
     nodes = project_nodes(coords)
 
-    payload = build_payload(w, nodes, args.modes, args.edge_percentile, args.source)
+    payload = build_payload(
+        w, nodes, networks, hemis, args.modes, args.edge_percentile, args.source
+    )
     args.output.write_text(json.dumps(payload, separators=(",", ":")))
     print(f"Wrote {args.output}")
     print(
