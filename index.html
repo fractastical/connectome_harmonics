@@ -112,6 +112,7 @@
         <option value="eigen">single Laplacian harmonic</option>
         <option value="mix">standing-wave superposition</option>
         <option value="kuramoto">coupled oscillator synchronization</option>
+        <option value="lsd">LSD vs placebo (real fMRI spectra)</option>
       </select>
       <label for="mode">harmonic mode: <strong id="modeVal">1</strong></label>
       <input id="mode" type="range" min="1" max="40" step="1" value="1" />
@@ -148,9 +149,22 @@
         <p><strong>↑ High-frequency harmonics</strong> (fine-grained modes) contribute more.</p>
         <p><strong>Expanded repertoire</strong> — more distinct harmonic brain states become active, with correlated cross-frequency co-activation.</p>
       </div>
-      <p class="small" style="margin-top:8px;">We ran a <strong>parcellated</strong> CHAP-style analysis on <a href="https://openneuro.org/datasets/ds003059" target="_blank" rel="noopener">OpenNeuro ds003059</a> (demo: 1 subject). Full vertex-level pipeline: <a href="https://github.com/HopkinsPsychedelic/connectome_harmonic_core" target="_blank" rel="noopener">CHAP</a>.</p>
-      <img id="lsdPlot" src="lsd_results/lsd_harmonic_spectra.png" alt="LSD vs placebo harmonic power spectra" style="width:100%;margin-top:10px;border-radius:12px;display:none;" />
-      <p class="small" id="lsdPlotCaption" style="margin-top:8px;display:none;"></p>
+      <p class="small" style="margin-top:8px;">We ran a <strong>parcellated</strong> CHAP-style analysis on <a href="https://openneuro.org/datasets/ds003059" target="_blank" rel="noopener">OpenNeuro ds003059</a>. Spectra below are computed by projecting real resting-state fMRI onto the HCP connectome harmonics. Full vertex-level pipeline: <a href="https://github.com/HopkinsPsychedelic/connectome_harmonic_core" target="_blank" rel="noopener">CHAP</a>.</p>
+      <div id="lsdChartWrap" style="display:none;margin-top:10px;">
+        <canvas id="lsdChart" style="width:100%;height:170px;display:block;cursor:crosshair;"></canvas>
+        <div class="legend" style="justify-content:flex-start;gap:14px;margin-top:6px;">
+          <span class="small" style="color:#8ec5ff;">■ placebo</span>
+          <span class="small" style="color:#c9a0ff;">■ LSD</span>
+          <span class="small" style="color:#ffd18e;">— LSD/placebo ratio</span>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <button id="lsdAnimate" class="primary">animate on brain</button>
+          <button id="lsdCondition">show: LSD</button>
+        </div>
+        <p class="small" id="lsdPlotCaption" style="margin-top:8px;"></p>
+        <p class="small" style="margin-top:4px;color:#6f7f96;">Click a mode in the chart to inspect it. “Animate on brain” drives the simulator with the real harmonic power distribution.</p>
+      </div>
+      <img id="lsdPlot" src="lsd_results/lsd_harmonic_spectra.png" alt="LSD vs placebo harmonic power spectra (static fallback)" style="width:100%;margin-top:10px;border-radius:12px;display:none;" />
     </div>
 
     <div class="card">
@@ -227,6 +241,11 @@ let tourActive = false;
 let tourTimer = null;
 const TOUR_SEC = 7;
 
+let LSD = null;            // parsed lsd_harmonic_spectra.json
+let lsdCondition = 'lsd';  // 'lsd' | 'placebo'
+let lsdWeights = null;     // normalized weights for current condition
+let lsdPhases = null;      // per-mode phase offsets for animation
+
 function rand(){ rngState = (1664525 * rngState + 1013904223) >>> 0; return rngState / 4294967296; }
 
 function resetPhases(){
@@ -295,6 +314,36 @@ function computeMixField(modeIndex, amp, speed){
     const k = picks[m];
     const v = DATA.modes[k];
     const wave = coeff[m] * Math.cos(t * speed * (0.75 + 2.1*Math.sqrt(DATA.eigvals[k])) + phases[m]);
+    for(let i=0;i<N;i++) field[i] += wave * v[i];
+  }
+  normalize(field);
+  for(let i=0;i<N;i++) field[i] *= amp;
+}
+
+function setLsdCondition(cond){
+  lsdCondition = cond;
+  if(!LSD) return;
+  const spec = LSD.group_mean_spectrum[cond];
+  const n = Math.min(spec.length, DATA ? DATA.modes.length : spec.length);
+  const w = spec.slice(0, n);
+  let mx = 1e-9; for(let k=0;k<n;k++) mx = Math.max(mx, w[k]);
+  lsdWeights = w.map(x => x / mx);
+  if(!lsdPhases || lsdPhases.length < n){
+    lsdPhases = new Float32Array(n);
+    let s = 99173;
+    for(let k=0;k<n;k++){ s = (1103515245*s + 12345) >>> 0; lsdPhases[k] = (s/4294967296)*2*Math.PI; }
+  }
+}
+
+function computeLsdField(amp, speed){
+  field.fill(0);
+  if(!lsdWeights){ if(LSD) setLsdCondition(lsdCondition); else return; }
+  const n = Math.min(lsdWeights.length, DATA.modes.length);
+  for(let k=0;k<n;k++){
+    const wk = lsdWeights[k];
+    if(wk < 0.04) continue;                 // skip negligible modes for speed
+    const v = DATA.modes[k];
+    const wave = wk * Math.cos(t * speed * (0.6 + 2.2*Math.sqrt(DATA.eigvals[k])) + lsdPhases[k]);
     for(let i=0;i<N;i++) field[i] += wave * v[i];
   }
   normalize(field);
@@ -374,6 +423,62 @@ function draw(){
   }
 }
 
+let lsdChartGeom = null;
+function drawLsdChart(){
+  const cv = document.getElementById('lsdChart');
+  if(!cv || !LSD) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = cv.getBoundingClientRect();
+  const W = Math.max(1, Math.floor(rect.width * dpr));
+  const H = Math.max(1, Math.floor(rect.height * dpr));
+  if(cv.width !== W || cv.height !== H){ cv.width = W; cv.height = H; }
+  const g = cv.getContext('2d');
+  g.clearRect(0,0,W,H);
+  const ml = 30*dpr, mr = 30*dpr, mt = 10*dpr, mb = 18*dpr;
+  const pw = W - ml - mr, ph = H - mt - mb;
+  const lsd = LSD.group_mean_spectrum.lsd, pcb = LSD.group_mean_spectrum.placebo;
+  const ratio = LSD.group_ratio_lsd_over_placebo;
+  const n = lsd.length;
+  let pmax = 1e-9; for(let k=0;k<n;k++){ pmax = Math.max(pmax, lsd[k], pcb[k]); }
+  const xAt = k => ml + (n<=1 ? 0 : (k/(n-1))*pw);
+  const yAt = p => mt + ph - (p/pmax)*ph;
+  // ratio secondary axis centered on 1.0
+  let rmax = 0.25; for(let k=0;k<n;k++){ rmax = Math.max(rmax, Math.abs(ratio[k]-1)); }
+  const yRatio = r => mt + ph/2 - ((r-1)/rmax)*(ph/2)*0.9;
+
+  // ratio=1 baseline
+  g.strokeStyle = 'rgba(255,209,142,0.25)'; g.lineWidth = 1*dpr;
+  g.setLineDash([4*dpr,4*dpr]); g.beginPath();
+  g.moveTo(ml, yRatio(1)); g.lineTo(ml+pw, yRatio(1)); g.stroke(); g.setLineDash([]);
+
+  // selected-mode highlight
+  const sel = Number(ui.mode.value)-1;
+  if(sel>=0 && sel<n){ g.strokeStyle='rgba(255,255,255,0.18)'; g.lineWidth=2*dpr;
+    g.beginPath(); g.moveTo(xAt(sel), mt); g.lineTo(xAt(sel), mt+ph); g.stroke(); }
+
+  const series = (arr, color) => {
+    g.strokeStyle = color; g.lineWidth = 1.8*dpr; g.beginPath();
+    for(let k=0;k<n;k++){ const x=xAt(k), y=yAt(arr[k]); if(k===0) g.moveTo(x,y); else g.lineTo(x,y); }
+    g.stroke();
+  };
+  series(pcb, '#8ec5ff');
+  series(lsd, '#c9a0ff');
+
+  // ratio line
+  g.strokeStyle = '#ffd18e'; g.lineWidth = 1.4*dpr; g.globalAlpha = 0.9; g.beginPath();
+  for(let k=0;k<n;k++){ const x=xAt(k), y=yRatio(ratio[k]); if(k===0) g.moveTo(x,y); else g.lineTo(x,y); }
+  g.stroke(); g.globalAlpha = 1;
+
+  // axis labels
+  g.fillStyle = '#6f7f96'; g.font = `${10*dpr}px ui-monospace, monospace`;
+  g.fillText('mode 1', ml, H-4*dpr);
+  g.fillText('mode '+n, ml+pw-34*dpr, H-4*dpr);
+  g.save(); g.fillStyle='#6f7f96';
+  g.fillText('power', 2*dpr, mt+8*dpr); g.restore();
+
+  lsdChartGeom = { ml, mr, pw, n };
+}
+
 function updateTourText(){
   const modeNum = Number(ui.mode.value);
   const lam = DATA.eigvals[modeNum - 1];
@@ -397,6 +502,7 @@ function frame(now){
   if(!paused) t += dt;
   if(ui.model.value === 'eigen') computeEigenField(modeIndex, amp, speed);
   else if(ui.model.value === 'mix') computeMixField(modeIndex, amp, speed);
+  else if(ui.model.value === 'lsd') computeLsdField(amp, speed);
   else { if(!paused) stepKuramoto(dt, amp, speed, Number(ui.coupling.value)); }
   draw(); updateHUD(modeIndex);
   requestAnimationFrame(frame);
@@ -457,7 +563,8 @@ function bindControls(){
     ui.amp.addEventListener(evt, syncLabels);
     ui.coupling.addEventListener(evt, syncLabels);
   });
-  ui.mode.addEventListener('input', () => { if (!tourActive) t = 0; });
+  ui.mode.addEventListener('input', () => { if (!tourActive) t = 0; if (LSD) drawLsdChart(); });
+  ui.model.addEventListener('change', () => { if (ui.model.value === 'lsd') enterLsdMode(); });
   ui.play.addEventListener('click', () => { paused = !paused; ui.play.textContent = paused ? 'play' : 'pause'; });
   ui.reset.addEventListener('click', () => { t = 0; resetPhases(); });
   ui.edges.addEventListener('click', () => { showEdges = !showEdges; ui.edges.textContent = showEdges ? 'hide edges' : 'show edges'; });
@@ -509,21 +616,68 @@ async function boot(){
   if (!animStarted) { animStarted = true; requestAnimationFrame(frame); }
 }
 
+function enterLsdMode(){
+  if (ui.dataset.value !== 'connectome_harmonics_data_hcp.json') {
+    ui.dataset.value = 'connectome_harmonics_data_hcp.json';
+    loadDataset(ui.dataset.value).then(() => { setLsdCondition(lsdCondition); });
+  } else {
+    setLsdCondition(lsdCondition);
+  }
+  ui.model.value = 'lsd';
+  paused = false; ui.play.textContent = 'pause';
+}
+
+function wireLsdControls(){
+  const cv = document.getElementById('lsdChart');
+  const condBtn = document.getElementById('lsdCondition');
+  const animBtn = document.getElementById('lsdAnimate');
+  if (cv && !cv.dataset.wired) {
+    cv.dataset.wired = '1';
+    cv.addEventListener('click', (e) => {
+      if (!lsdChartGeom) return;
+      const rect = cv.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const x = (e.clientX - rect.left) * dpr;
+      const { ml, pw, n } = lsdChartGeom;
+      const frac = Math.max(0, Math.min(1, (x - ml) / pw));
+      stopTour(); setMode(Math.round(frac*(n-1)) + 1); drawLsdChart();
+    });
+  }
+  if (condBtn && !condBtn.dataset.wired) {
+    condBtn.dataset.wired = '1';
+    condBtn.addEventListener('click', () => {
+      const next = lsdCondition === 'lsd' ? 'placebo' : 'lsd';
+      setLsdCondition(next);
+      condBtn.textContent = 'show: ' + (next === 'lsd' ? 'LSD' : 'placebo');
+    });
+  }
+  if (animBtn && !animBtn.dataset.wired) {
+    animBtn.dataset.wired = '1';
+    animBtn.addEventListener('click', enterLsdMode);
+  }
+}
+
 async function loadLsdResults(){
   try {
     const res = await fetch('lsd_results/lsd_harmonic_spectra.json');
     if (!res.ok) return;
-    const d = await res.json();
-    const img = document.getElementById('lsdPlot');
+    LSD = await res.json();
+    document.getElementById('lsdChartWrap').style.display = 'block';
+    wireLsdControls();
+    setLsdCondition(lsdCondition);
+    drawLsdChart();
     const cap = document.getElementById('lsdPlotCaption');
-    if (img) img.style.display = 'block';
     if (cap) {
-      const s = d.summary;
-      cap.style.display = 'block';
-      cap.textContent = `Group spectra (${d.meta.n_subjects} subjects): low-band LSD/PCB ratio ${s.low_band_mean_ratio.toFixed(2)}, high-band ${s.high_band_mean_ratio.toFixed(2)} — matches Atasoy 2017 direction.`;
+      const s = LSD.summary;
+      const subj = LSD.meta.n_subjects;
+      const low = s.low_band_mean_ratio, high = s.high_band_mean_ratio;
+      const lowTxt = low < 1 ? 'low frequencies reduced under LSD — consistent with Atasoy 2017' : 'low frequencies elevated under LSD';
+      const entHigher = s.mean_entropy_lsd > s.mean_entropy_placebo;
+      cap.textContent = `Group spectra, ${subj} subject${subj===1?'':'s'} (ds003059). Low-band LSD/placebo ratio ${low.toFixed(2)} (${lowTxt}); high-band ratio ${high.toFixed(2)}. Repertoire entropy ${s.mean_entropy_lsd.toFixed(2)} (LSD) vs ${s.mean_entropy_placebo.toFixed(2)} (placebo)${entHigher ? ' — slightly broader harmonic repertoire under LSD' : ''}. This is a coarse, parcellated approximation of the vertex-level result; the high-frequency increase reported by Atasoy 2017 is best resolved with the full CHAP pipeline.`;
     }
   } catch (_) {}
 }
+window.addEventListener('resize', () => { if (LSD) drawLsdChart(); });
 
 boot();
 loadLsdResults();
