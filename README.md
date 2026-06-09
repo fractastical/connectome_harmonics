@@ -2,6 +2,8 @@
 
 Educational simulator for **graph Laplacian harmonics** on brain-like connectivity networks — inspired by [Atasoy et al., 2016](https://www.nature.com/articles/ncomms10340).
 
+**Live demo:** https://cimcai.github.io/connectome_harmonics/
+
 The graph Laplacian \(L = I - D^{-1/2} W D^{-1/2}\) turns a connectome into a geometry. Its eigenvectors are spatial **harmonics**: low modes are broad, bilateral patterns; high modes are finer, more localized waves.
 
 ## What's here
@@ -16,7 +18,7 @@ The graph Laplacian \(L = I - D^{-1/2} W D^{-1/2}\) turns a connectome into a ge
 
 ## Quick start
 
-**Browser (toy data):** open `connectome_harmonics_simulation.html`
+**Browser:** open [index.html](index.html) locally, or visit the [live demo](https://cimcai.github.io/connectome_harmonics/). Features a **mode tour**, literature references, and HCP vs toy data toggle.
 
 **Python animation:**
 ```bash

@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Connectome Harmonics Simulator</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #090b10;
+    --panel: #111722;
+    --panel2: #171f2d;
+    --text: #e8eef9;
+    --muted: #9fb0c8;
+    --accent: #8ec5ff;
+    --warn: #ffd18e;
+    --lsd: #c9a0ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  body { overflow: hidden; }
+  .app { display: grid; grid-template-columns: minmax(520px, 1fr) 390px; height: 100vh; }
+  .stage { position: relative; min-width: 0; display: flex; flex-direction: column; }
+  header { padding: 16px 20px 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  h1 { font-size: 20px; margin: 0; font-weight: 740; letter-spacing: .2px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 3px; }
+  .badge { font-size: 12px; color: #111; background: var(--warn); padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
+  .badge.real { background: #9fd8b0; }
+  canvas#brain { width: 100%; height: calc(100vh - 88px); display: block; }
+  .hud { position: absolute; left: 18px; bottom: 18px; background: rgba(9, 11, 16, .72); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 12px 14px; min-width: 260px; backdrop-filter: blur(8px); }
+  .hud .line { display: flex; justify-content: space-between; gap: 18px; font-variant-numeric: tabular-nums; font-size: 13px; margin: 4px 0; }
+  .hud .line span:first-child { color: var(--muted); }
+  .sidebar { background: linear-gradient(180deg, #101725, #080b11); border-left: 1px solid rgba(255,255,255,.08); padding: 18px; overflow-y: auto; }
+  .card { background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 14px; margin-bottom: 14px; box-shadow: 0 12px 34px rgba(0,0,0,.18); }
+  .card.tour-active { border-color: rgba(142,197,255,.45); box-shadow: 0 0 0 1px rgba(142,197,255,.15); }
+  .card h2 { font-size: 14px; margin: 0 0 10px; letter-spacing: .16px; }
+  label { display: block; color: var(--muted); font-size: 12px; margin: 12px 0 6px; }
+  input[type="range"] { width: 100%; }
+  select, button { width: 100%; color: var(--text); background: var(--panel2); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 10px 11px; font: inherit; }
+  button { cursor: pointer; transition: transform .08s ease, background .2s ease; }
+  button:hover { background: #1d2a3d; }
+  button:active { transform: translateY(1px); }
+  button.primary { background: #1a3350; border-color: rgba(142,197,255,.35); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .chips { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .chip { padding: 8px 0; border-radius: 10px; background: #172031; border: 1px solid rgba(255,255,255,.09); color: var(--text); font-size: 12px; }
+  .chip.active { outline: 2px solid var(--accent); background: #1d3148; }
+  .small { color: var(--muted); font-size: 12px; line-height: 1.45; }
+  .eq { color: #d9e7ff; background: rgba(142,197,255,.08); border-radius: 12px; padding: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; overflow-x: auto; }
+  .legend { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .bar { flex: 1; height: 12px; border-radius: 999px; background: linear-gradient(90deg, rgb(30,82,172), rgb(240,243,247), rgb(191,40,32)); border: 1px solid rgba(255,255,255,.12); }
+  .refs { list-style: none; padding: 0; margin: 0; }
+  .refs li { margin: 8px 0; font-size: 12px; line-height: 1.4; }
+  .refs a { color: var(--accent); text-decoration: none; }
+  .refs a:hover { text-decoration: underline; }
+  .tour-note { background: rgba(142,197,255,.07); border: 1px solid rgba(142,197,255,.18); border-radius: 12px; padding: 10px; margin-top: 10px; font-size: 12px; line-height: 1.5; color: #d9e7ff; min-height: 4.5em; }
+  .tour-meta { color: var(--muted); font-size: 11px; margin-top: 6px; }
+  .lsd-callout { border-left: 3px solid var(--lsd); padding-left: 10px; margin-top: 8px; }
+  .loading { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(9,11,16,.82); font-size: 14px; color: var(--muted); }
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    .app { grid-template-columns: 1fr; height: auto; }
+    canvas#brain { height: 65vh; }
+    .sidebar { border-left: none; border-top: 1px solid rgba(255,255,255,.08); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <main class="stage">
+    <header>
+      <div>
+        <h1>Connectome Harmonics Simulator</h1>
+        <div class="subtitle" id="subtitle">Graph Laplacian eigenmodes as standing waves on a brain-like network</div>
+      </div>
+      <div class="badge" id="dataBadge">loading…</div>
+    </header>
+    <canvas id="brain"></canvas>
+    <div class="loading" id="loading">Loading connectome data…</div>
+    <div class="hud">
+      <div class="line"><span>mode</span><strong id="hudMode">1</strong></div>
+      <div class="line"><span>λ / √λ</span><strong id="hudLambda">–</strong></div>
+      <div class="line"><span>graph roughness</span><strong id="hudEnergy">–</strong></div>
+      <div class="line"><span>simulation time</span><strong id="hudTime">0.00 s</strong></div>
+    </div>
+  </main>
+  <aside class="sidebar">
+    <div class="card">
+      <h2>Connectome data</h2>
+      <select id="dataset">
+        <option value="connectome_harmonics_data.json">Toy synthetic graph</option>
+        <option value="connectome_harmonics_data_hcp.json">HCP Schaefer-400 structural SC</option>
+      </select>
+      <p class="small" style="margin-top:8px;">Switch graphs to compare a teaching toy model with a real group-average human structural connectome.</p>
+    </div>
+
+    <div class="card" id="tourCard">
+      <h2>Mode tour</h2>
+      <p class="small">Auto-cycle through harmonic modes with short explanations. Low modes are broad global waves; high modes are finer patterns.</p>
+      <div class="row" style="margin-top:10px;">
+        <button id="tourStart" class="primary">start tour</button>
+        <button id="tourStop">stop</button>
+      </div>
+      <div class="tour-note" id="tourNote">Press <strong>start tour</strong> to walk through modes 1–40. Each mode is an eigenvector of the graph Laplacian — a “standing wave” allowed by the connectome geometry.</div>
+      <div class="tour-meta" id="tourMeta"></div>
+    </div>
+
+    <div class="card">
+      <h2>Simulation</h2>
+      <label for="model">field model</label>
+      <select id="model">
+        <option value="eigen">single Laplacian harmonic</option>
+        <option value="mix">standing-wave superposition</option>
+        <option value="kuramoto">coupled oscillator synchronization</option>
+      </select>
+      <label for="mode">harmonic mode: <strong id="modeVal">1</strong></label>
+      <input id="mode" type="range" min="1" max="40" step="1" value="1" />
+      <div class="chips" id="chips"></div>
+      <label for="speed">speed: <strong id="speedVal">1.00×</strong></label>
+      <input id="speed" type="range" min="0" max="3" step="0.01" value="1" />
+      <label for="amp">amplitude: <strong id="ampVal">1.00</strong></label>
+      <input id="amp" type="range" min="0.05" max="2" step="0.01" value="1" />
+      <label for="coupling">coupling K (oscillator view): <strong id="couplingVal">1.2</strong></label>
+      <input id="coupling" type="range" min="0" max="4" step="0.01" value="1.2" />
+      <div class="row" style="margin-top: 12px;">
+        <button id="play">pause</button>
+        <button id="reset">reset phases</button>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button id="edges">hide edges</button>
+        <button id="png">export PNG</button>
+      </div>
+      <div class="legend"><span class="small">−</span><div class="bar"></div><span class="small">+</span></div>
+    </div>
+
+    <div class="card">
+      <h2>What this simulates</h2>
+      <p class="small">Nodes are brain regions; edges are structural connections. The normalized graph Laplacian turns connectivity into a geometry. Its eigenvectors <em>v<sub>k</sub></em> are spatial harmonics — the connectome’s allowed standing-wave patterns.</p>
+      <div class="eq">x<sub>i</sub>(t) = a<sub>k</sub> v<sub>k,i</sub> cos(√λ<sub>k</sub> · t)</div>
+      <p class="small">This demo animates those basis patterns. Real fMRI activity can be decomposed into the same harmonics (see literature below).</p>
+    </div>
+
+    <div class="card">
+      <h2>LSD &amp; connectome harmonics</h2>
+      <p class="small">The paper <a href="https://www.nature.com/articles/s41598-017-17546-0" target="_blank" rel="noopener">Atasoy et al. 2017 (Scientific Reports)</a> — often discussed as “connectome-specific harmonic waves under LSD” — does <strong>not</strong> publish a downloadable harmonic-power dataset. It reports findings from decomposing LSD/placebo fMRI:</p>
+      <div class="lsd-callout small">
+        <p><strong>↓ Low-frequency harmonics</strong> (broad modes like those at the start of the tour) contribute less under LSD.</p>
+        <p><strong>↑ High-frequency harmonics</strong> (fine-grained modes) contribute more.</p>
+        <p><strong>Expanded repertoire</strong> — more distinct harmonic brain states become active, with correlated cross-frequency co-activation.</p>
+      </div>
+      <p class="small" style="margin-top:8px;">Raw LSD fMRI is public on <a href="https://openneuro.org/datasets/ds003059" target="_blank" rel="noopener">OpenNeuro ds003059</a>; harmonic decomposition requires running a pipeline such as <a href="https://github.com/HopkinsPsychedelic/connectome_harmonic_core" target="_blank" rel="noopener">CHAP</a>.</p>
+    </div>
+
+    <div class="card">
+      <h2>References</h2>
+      <ul class="refs">
+        <li><a href="https://www.nature.com/articles/ncomms10340" target="_blank" rel="noopener">Atasoy et al. 2016</a> — Connectome-specific harmonic waves (foundational theory).</li>
+        <li><a href="https://www.nature.com/articles/s41598-017-17546-0" target="_blank" rel="noopener">Atasoy et al. 2017</a> — Harmonic repertoire reorganization under LSD.</li>
+        <li><a href="https://www.sciencedirect.com/science/article/pii/S1053811920308508" target="_blank" rel="noopener">Sanchez et al. 2020</a> — Robustness of harmonics to connectivity changes.</li>
+        <li><a href="https://www.nature.com/articles/s42003-024-06669-6" target="_blank" rel="noopener">Vohryzek et al. 2024</a> — Integrative, segregative, and degenerate harmonics.</li>
+        <li><a href="https://openneuro.org/datasets/ds003059" target="_blank" rel="noopener">Carhart-Harris et al. 2020</a> — LSD fMRI dataset (OpenNeuro ds003059).</li>
+      </ul>
+    </div>
+
+    <p class="small" style="padding-bottom:12px;">Educational visualization. Not medical advice or individual brain data.</p>
+  </aside>
+</div>
+<script>
+const DATASETS = {
+  'connectome_harmonics_data.json': { label: 'toy model', real: false },
+  'connectome_harmonics_data_hcp.json': { label: 'HCP structural SC', real: true },
+};
+
+const MODE_NOTES = {
+  1: 'Mode 1 — slowest non-trivial harmonic (smallest λ). Often a broad left–right or front–back split across the whole graph. In the LSD paper, these low-frequency modes lose power under psychedelics.',
+  2: 'Mode 2 — still very global. Large-scale bilateral pattern; energy changes slowly because √λ is small.',
+  3: 'Mode 3 — third global harmonic. Try comparing to mode 1: different nodal lines where the field crosses zero (blue/red boundary).',
+  7: 'Mode 7 — mid-low frequency. Finer bilateral structure than modes 1–3. Frequently highlighted in connectome-harmonics figures.',
+  9: 'Mode 9 — beginning of mesoscale structure: patches grow more independent while still spanning both hemispheres.',
+  12: 'Mode 12 — intermediate harmonic. Spatial frequency is high enough that regional clusters stand out.',
+  14: 'Mode 14 — finer partitioning. Under LSD, contributions from harmonics in this range tend to increase relative to placebo.',
+  19: 'Mode 19 — high-mid frequency. Localized positive/negative regions resemble intra-network standing waves.',
+  20: 'Mode 20 — classic “fine-grained” regime. Atasoy 2017 reports enhanced high-frequency harmonic power under LSD.',
+  30: 'Mode 30 — high-frequency harmonic. Short spatial wavelength; many nodal regions. Associated with richer dynamical repertoires in psychedelic states.',
+};
+
+function modeExplanation(modeNum, lam, nModes) {
+  if (MODE_NOTES[modeNum]) return MODE_NOTES[modeNum];
+  const frac = modeNum / nModes;
+  if (frac <= 0.15) return `Mode ${modeNum} (λ=${lam.toFixed(4)}) — low-frequency, large-scale pattern. Contributes to slow, global dynamics. Suppressed under LSD in Atasoy 2017.`;
+  if (frac <= 0.4) return `Mode ${modeNum} (λ=${lam.toFixed(4)}) — mesoscale harmonic. Regional co-activation patterns become more detailed.`;
+  if (frac <= 0.7) return `Mode ${modeNum} (λ=${lam.toFixed(4)}) — higher spatial frequency. Finer nodal structure; oscillates faster (√λ larger).`;
+  return `Mode ${modeNum} (λ=${lam.toFixed(4)}) — high-frequency harmonic. Fine-grained pattern; LSD literature links this band to expanded dynamical repertoire.`;
+}
+
+let DATA = null;
+let N = 0;
+const canvas = document.getElementById('brain');
+const ctx = canvas.getContext('2d');
+const ui = {
+  dataset: document.getElementById('dataset'),
+  model: document.getElementById('model'), mode: document.getElementById('mode'), speed: document.getElementById('speed'),
+  amp: document.getElementById('amp'), coupling: document.getElementById('coupling'),
+  modeVal: document.getElementById('modeVal'), speedVal: document.getElementById('speedVal'),
+  ampVal: document.getElementById('ampVal'), couplingVal: document.getElementById('couplingVal'),
+  play: document.getElementById('play'), reset: document.getElementById('reset'), edges: document.getElementById('edges'), png: document.getElementById('png'),
+  chips: document.getElementById('chips'),
+  hudMode: document.getElementById('hudMode'), hudLambda: document.getElementById('hudLambda'),
+  hudEnergy: document.getElementById('hudEnergy'), hudTime: document.getElementById('hudTime'),
+  tourStart: document.getElementById('tourStart'), tourStop: document.getElementById('tourStop'),
+  tourNote: document.getElementById('tourNote'), tourMeta: document.getElementById('tourMeta'),
+  tourCard: document.getElementById('tourCard'),
+  dataBadge: document.getElementById('dataBadge'), subtitle: document.getElementById('subtitle'),
+  loading: document.getElementById('loading'),
+};
+let DPR = window.devicePixelRatio || 1;
+let Wc = 1, Hc = 1, transform = {sx:1, sy:1, ox:0, oy:0};
+let t = 0, last = performance.now(), paused = false, showEdges = true;
+let field = new Float32Array(0);
+let theta = new Float32Array(0);
+let omega = new Float32Array(0);
+let rngState = 123456789;
+let animStarted = false;
+let tourActive = false;
+let tourTimer = null;
+const TOUR_SEC = 7;
+
+function rand(){ rngState = (1664525 * rngState + 1013904223) >>> 0; return rngState / 4294967296; }
+
+function resetPhases(){
+  rngState = 123456789;
+  for(let i=0;i<N;i++){
+    theta[i] = (rand()*2-1)*Math.PI;
+    omega[i] = 0.65 + 0.25*(rand()*2-1) + 0.08*DATA.nodes[i][1];
+  }
+}
+
+function resize(){
+  const rect = canvas.getBoundingClientRect();
+  DPR = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.floor(rect.width * DPR));
+  canvas.height = Math.max(1, Math.floor(rect.height * DPR));
+  Wc = canvas.width; Hc = canvas.height;
+  const xs = DATA.nodes.map(p=>p[0]), ys = DATA.nodes.map(p=>p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const pad = 0.14;
+  const sx = Wc / ((maxX-minX)*(1+pad));
+  const sy = Hc / ((maxY-minY)*(1+pad));
+  const s = Math.min(sx, sy);
+  transform = {sx:s, sy:s, ox: Wc/2 - s*(minX+maxX)/2, oy: Hc/2 + s*(minY+maxY)/2};
+}
+window.addEventListener('resize', () => { if (DATA) resize(); });
+
+function X(i){ return DATA.nodes[i][0]*transform.sx + transform.ox; }
+function Y(i){ return -DATA.nodes[i][1]*transform.sy + transform.oy; }
+function colorMap(v){
+  v = Math.max(-1, Math.min(1, v));
+  let r,g,b;
+  if(v < 0){
+    const a = -v;
+    r = Math.round(235*(1-a) + 30*a);
+    g = Math.round(240*(1-a) + 82*a);
+    b = Math.round(245*(1-a) + 172*a);
+  } else {
+    const a = v;
+    r = Math.round(240*(1-a) + 191*a);
+    g = Math.round(243*(1-a) + 40*a);
+    b = Math.round(247*(1-a) + 32*a);
+  }
+  return `rgb(${r},${g},${b})`;
+}
+
+function normalize(arr){
+  let mx = 1e-9;
+  for(let i=0;i<arr.length;i++) mx = Math.max(mx, Math.abs(arr[i]));
+  for(let i=0;i<arr.length;i++) arr[i] /= mx;
+}
+
+function computeEigenField(modeIndex, amp, speed){
+  const k = Math.max(0, Math.min(DATA.modes.length-1, modeIndex));
+  const v = DATA.modes[k];
+  const phase = Math.cos(t * speed * (0.8 + 2.2*Math.sqrt(DATA.eigvals[k])));
+  for(let i=0;i<N;i++) field[i] = amp * v[i] * phase;
+}
+
+function computeMixField(modeIndex, amp, speed){
+  field.fill(0);
+  const n = DATA.modes.length;
+  const picks = [modeIndex, (modeIndex+2)%n, (modeIndex+6)%n, (modeIndex+11)%n, (modeIndex*2+3)%n];
+  const coeff = [1.0, 0.55, 0.38, 0.28, 0.22];
+  const phases = [0.0, 1.7, 3.1, 4.3, 5.2];
+  for(let m=0;m<picks.length;m++){
+    const k = picks[m];
+    const v = DATA.modes[k];
+    const wave = coeff[m] * Math.cos(t * speed * (0.75 + 2.1*Math.sqrt(DATA.eigvals[k])) + phases[m]);
+    for(let i=0;i<N;i++) field[i] += wave * v[i];
+  }
+  normalize(field);
+  for(let i=0;i<N;i++) field[i] *= amp;
+}
+
+function stepKuramoto(dt, amp, speed, K){
+  dt = Math.min(dt, 0.033) * (0.4 + speed);
+  const delta = new Float32Array(N);
+  for(const e of DATA.edges){
+    const i=e[0], j=e[1], w=e[2];
+    const d = K * w * Math.sin(theta[j] - theta[i]);
+    delta[i] += d;
+    delta[j] -= d;
+  }
+  for(let i=0;i<N;i++) theta[i] += dt * (omega[i] + delta[i]);
+  for(let i=0;i<N;i++) field[i] = amp * Math.sin(theta[i]);
+}
+
+function roughness(){
+  let num=0, den=1e-9;
+  for(const e of DATA.edges){ const d=field[e[0]]-field[e[1]]; num += e[2]*d*d; }
+  for(let i=0;i<N;i++) den += field[i]*field[i];
+  return num/den;
+}
+
+function drawSilhouette(){
+  ctx.save();
+  ctx.globalAlpha = 0.13;
+  ctx.fillStyle = '#526982';
+  for(const side of [-1, 1]){
+    ctx.beginPath();
+    const cx = side < 0 ? -0.58 : 0.58;
+    for(let a=0; a<=Math.PI*2+0.02; a+=0.04){
+      const rx = 0.57 + 0.035*Math.sin(3*a + side*0.4);
+      const ry = 0.88 + 0.03*Math.cos(2*a);
+      const px = cx + side*rx*Math.cos(a), py = ry*Math.sin(a);
+      const sx = px*transform.sx + transform.ox, sy = -py*transform.sy + transform.oy;
+      if(a===0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+    }
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha = 0.25;
+  ctx.strokeStyle = '#8aa1bd'; ctx.lineWidth = 1.0*DPR;
+  ctx.beginPath();
+  ctx.moveTo(transform.ox, Hc*0.17); ctx.lineTo(transform.ox, Hc*0.84); ctx.stroke();
+  ctx.restore();
+}
+
+function draw(){
+  ctx.clearRect(0,0,Wc,Hc);
+  const grad = ctx.createRadialGradient(Wc*0.5,Hc*0.48,10,Wc*0.5,Hc*0.5,Math.max(Wc,Hc)*0.62);
+  grad.addColorStop(0, '#121a27'); grad.addColorStop(1, '#07090e');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,Wc,Hc);
+  drawSilhouette();
+  if(showEdges){
+    ctx.lineCap = 'round';
+    for(const e of DATA.edges){
+      const i=e[0], j=e[1], w=e[2];
+      const val = (Math.abs(field[i]) + Math.abs(field[j])) * 0.5;
+      ctx.globalAlpha = Math.min(0.34, 0.045 + 0.16*w + 0.08*val);
+      ctx.strokeStyle = '#8190a3';
+      ctx.lineWidth = Math.max(0.45*DPR, (0.35 + 0.85*w)*DPR);
+      ctx.beginPath(); ctx.moveTo(X(i), Y(i)); ctx.lineTo(X(j), Y(j)); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+  for(let i=0;i<N;i++){
+    const val = field[i];
+    const r = (2.7 + 2.9*Math.min(1, Math.abs(val))) * DPR;
+    ctx.beginPath(); ctx.arc(X(i), Y(i), r, 0, 2*Math.PI);
+    ctx.fillStyle = colorMap(val);
+    ctx.fill();
+    ctx.lineWidth = 0.55*DPR;
+    ctx.strokeStyle = 'rgba(10,15,22,.6)';
+    ctx.stroke();
+  }
+}
+
+function updateTourText(){
+  const modeNum = Number(ui.mode.value);
+  const lam = DATA.eigvals[modeNum - 1];
+  ui.tourNote.textContent = modeExplanation(modeNum, lam, DATA.modes.length);
+  ui.tourMeta.textContent = `Mode ${modeNum} of ${DATA.modes.length} · λ=${lam.toFixed(4)} · √λ=${Math.sqrt(lam).toFixed(4)}`;
+}
+
+function updateHUD(modeIndex){
+  ui.hudMode.textContent = `${modeIndex+1}`;
+  const lam = DATA.eigvals[modeIndex];
+  ui.hudLambda.textContent = `${lam.toFixed(4)} / ${Math.sqrt(lam).toFixed(4)}`;
+  ui.hudEnergy.textContent = roughness().toFixed(4);
+  ui.hudTime.textContent = `${t.toFixed(2)} s`;
+}
+
+function frame(now){
+  const dt = Math.min(0.05, (now-last)/1000 || 0); last = now;
+  const modeIndex = Number(ui.mode.value)-1;
+  const speed = Number(ui.speed.value);
+  const amp = Number(ui.amp.value);
+  if(!paused) t += dt;
+  if(ui.model.value === 'eigen') computeEigenField(modeIndex, amp, speed);
+  else if(ui.model.value === 'mix') computeMixField(modeIndex, amp, speed);
+  else { if(!paused) stepKuramoto(dt, amp, speed, Number(ui.coupling.value)); }
+  draw(); updateHUD(modeIndex);
+  requestAnimationFrame(frame);
+}
+
+function syncLabels(){
+  ui.modeVal.textContent = ui.mode.value;
+  ui.speedVal.textContent = Number(ui.speed.value).toFixed(2) + '×';
+  ui.ampVal.textContent = Number(ui.amp.value).toFixed(2);
+  ui.couplingVal.textContent = Number(ui.coupling.value).toFixed(2);
+  [...document.querySelectorAll('.chip')].forEach(b => b.classList.toggle('active', Number(b.dataset.mode) === Number(ui.mode.value)));
+  updateTourText();
+}
+
+function setMode(m){
+  ui.mode.value = m;
+  t = 0;
+  syncLabels();
+}
+
+function stopTour(){
+  tourActive = false;
+  ui.tourCard.classList.remove('tour-active');
+  ui.tourStart.textContent = 'start tour';
+  if (tourTimer) { clearInterval(tourTimer); tourTimer = null; }
+}
+
+function startTour(){
+  stopTour();
+  tourActive = true;
+  ui.tourCard.classList.add('tour-active');
+  ui.tourStart.textContent = 'touring…';
+  ui.model.value = 'eigen';
+  paused = false;
+  ui.play.textContent = 'pause';
+  let m = Number(ui.mode.value);
+  tourTimer = setInterval(() => {
+    m = m >= DATA.modes.length ? 1 : m + 1;
+    setMode(m);
+  }, TOUR_SEC * 1000);
+}
+
+function buildChips(){
+  ui.chips.innerHTML = '';
+  const highlights = [1,2,3,7,9,12,14,19,20,30].filter(m => m <= (DATA?.modes.length || 40));
+  for(const m of highlights){
+    const b = document.createElement('button');
+    b.className = 'chip'; b.dataset.mode = m; b.textContent = m;
+    b.addEventListener('click', () => { stopTour(); setMode(m); });
+    ui.chips.appendChild(b);
+  }
+}
+
+function bindControls(){
+  ['input','change'].forEach(evt => {
+    ui.mode.addEventListener(evt, () => { syncLabels(); });
+    ui.speed.addEventListener(evt, syncLabels);
+    ui.amp.addEventListener(evt, syncLabels);
+    ui.coupling.addEventListener(evt, syncLabels);
+  });
+  ui.mode.addEventListener('input', () => { if (!tourActive) t = 0; });
+  ui.play.addEventListener('click', () => { paused = !paused; ui.play.textContent = paused ? 'play' : 'pause'; });
+  ui.reset.addEventListener('click', () => { t = 0; resetPhases(); });
+  ui.edges.addEventListener('click', () => { showEdges = !showEdges; ui.edges.textContent = showEdges ? 'hide edges' : 'show edges'; });
+  ui.png.addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `connectome_harmonic_mode_${ui.mode.value}.png`;
+    a.click();
+  });
+  ui.tourStart.addEventListener('click', () => tourActive ? stopTour() : startTour());
+  ui.tourStop.addEventListener('click', stopTour);
+  ui.dataset.addEventListener('change', () => loadDataset(ui.dataset.value));
+}
+
+async function loadDataset(path){
+  stopTour();
+  ui.loading.style.display = 'grid';
+  try {
+    const res = await fetch(path);
+    if (!res.ok) throw new Error(res.statusText);
+    DATA = await res.json();
+    N = DATA.nodes.length;
+    field = new Float32Array(N);
+    theta = new Float32Array(N);
+    omega = new Float32Array(N);
+    ui.mode.max = DATA.modes.length;
+    ui.mode.value = Math.min(Number(ui.mode.value), DATA.modes.length);
+    const meta = DATASETS[path] || { label: 'custom', real: false };
+    ui.dataBadge.textContent = meta.label;
+    ui.dataBadge.classList.toggle('real', meta.real);
+    ui.subtitle.textContent = DATA.meta?.description || 'Graph Laplacian eigenmodes as standing waves';
+    resetPhases();
+    buildChips();
+    resize();
+    syncLabels();
+  } catch (err) {
+    ui.tourNote.textContent = `Failed to load ${path}: ${err.message}`;
+  } finally {
+    ui.loading.style.display = 'none';
+  }
+}
+
+async function boot(){
+  bindControls();
+  const params = new URLSearchParams(location.search);
+  const initial = params.get('data') || 'connectome_harmonics_data.json';
+  if (DATASETS[initial]) ui.dataset.value = initial;
+  await loadDataset(ui.dataset.value);
+  if (!animStarted) { animStarted = true; requestAnimationFrame(frame); }
+}
+
+boot();
+</script>
+</body>
+</html>
