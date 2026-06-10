@@ -164,13 +164,13 @@
         <div class="exp-q">Shape vs wiring — and does LSD move the winner?</div>
         <p class="exp-m"><b>Method:</b> <span class="term" tabindex="0" data-tip="Reconstruct = approximate each fMRI activity pattern as a weighted sum of the first N modes of a basis, then score how close it is to the original (correlation). Fewer modes for the same accuracy = a more natural basis.">reconstruct</span> BOLD from the first N vectors of three bases (connectome, cortical geometry, <span class="term" tabindex="0" data-tip="Exponential Distance Rule: a surrogate connectome where connection strength falls off exponentially with the distance between regions — geometry without real wiring.">distance rule</span>); <b><span class="term" tabindex="0" data-tip="A within-subject comparison: every subject contributes both LSD and placebo, so we test each subject's own LSD−placebo difference, controlling for individual differences.">paired test</span></b> of the geometric−connectome advantage, LSD vs placebo.</p>
         <p class="exp-r"><span class="res-k">A tie at rest — but LSD shifts it toward geometry.</span> The geometric basis reliably gains on the connectome under LSD.
-          <span class="pills"><span class="pill sig"><span class="term" tabindex="0" data-tip="Δ in the area under the reconstruction-accuracy curve (AUC summarizes how efficiently a basis recreates the data across mode counts). Positive = geometry gained on the connectome under LSD.">ΔAUC</span> +0.006</span><span class="pill sig">paired t(11)=4.60</span><span class="pill sig">p=0.0008</span><span class="pill sig"><span class="term" tabindex="0" data-tip="Cohen's d_z: standardized effect size for a paired test (mean difference ÷ its SD across subjects). 1.33 is a large effect.">d_z=1.33</span></span><span class="pill sig">12/12 subjects</span></span>
+          <span class="pills"><span class="pill sig"><span class="term" tabindex="0" data-tip="Δ in the area under the reconstruction-accuracy curve (AUC summarizes how efficiently a basis recreates the data across mode counts). Positive = geometry gained on the connectome under LSD.">ΔAUC</span> +0.006</span><span class="pill sig">paired t(11)=4.60</span><span class="pill sig">p=0.0008</span><span class="pill sig"><span class="term" tabindex="0" data-tip="Cohen's d_z: standardized effect size for a paired test (mean difference ÷ its SD across subjects). 1.33 is a large effect.">d_z=1.33</span></span><span class="pill sig">12/12 subjects</span><span class="pill sig"><span class="term" tabindex="0" data-tip="Re-run after global-signal regression + detrend + DVARS frame censoring, and tested with an exact within-subject sign-flip permutation null. The shift attenuates (Δ+0.004) but stays significant (p=0.002, perm p=0.003) — so it is not purely a global-signal/motion artifact.">holds after GSR + permutation</span></span></span>
         </p>
       </div>
     </div>
 
     <div class="hero-bottomline">
-      <b>Bottom line:</b> under LSD the harmonic repertoire reorganizes — less low-frequency, wiring-bound structure and a measurable drift toward smooth cortical-<em>shape</em> patterns. The psychedelic shift is a <b>within-subject effect significant at p&lt;0.001</b> across all 12 subjects.
+      <b>Bottom line:</b> under LSD the harmonic repertoire reorganizes — less low-frequency, wiring-bound structure and a measurable drift toward smooth cortical-<em>shape</em> patterns. The psychedelic shift is a <b>within-subject effect significant at p&lt;0.001</b> across all 12 subjects, and it <b>survives nuisance regression</b> (global-signal + detrend + motion-proxy censoring) and an exact permutation null — so it is not merely a motion or global-signal artifact. It remains a coarse, parcellated result on one cohort.
     </div>
 
     <div class="hero-figs">
@@ -351,7 +351,7 @@
         </div>
         <p class="small" id="basisCaption" style="margin-top:8px;color:#9fb0c6;"></p>
         <div class="lsd-callout small" id="basisFinding" style="margin-top:8px;"></div>
-        <p class="small" style="margin-top:6px;color:#6f7f96;">Caveat: parcellated (400 regions) — the regime where the geometric advantage is <em>weakest</em>; geometric modes are hemisphere-separable while connectome/EDR are whole-brain. The LSD shift <em>is</em> significance-tested (within-subject paired test, see above), but the broader vertex-level geometry-vs-wiring debate remains open (cf. <a href="https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1" target="_blank" rel="noopener">Mansour et al. 2024</a>).</p>
+        <p class="small" style="margin-top:6px;color:#6f7f96;">Caveat: parcellated (400 regions) — the regime where the geometric advantage is <em>weakest</em>; geometric modes are hemisphere-separable while connectome/EDR are whole-brain. The LSD shift <em>is</em> significance-tested (within-subject paired test + exact sign-flip permutation) and <em>survives</em> nuisance regression (GSR + detrend + DVARS censoring), so it is not merely a motion/global-signal artifact. Remaining limits: no fmriprep motion parameters on this raw dataset, single cohort (n=12), and the broader vertex-level geometry-vs-wiring debate stays open (cf. <a href="https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1" target="_blank" rel="noopener">Mansour et al. 2024</a>).</p>
       </div>
       <img id="basisPlot" src="lsd_results/basis_comparison.png" alt="Reconstruction accuracy: connectome vs geometric vs EDR" style="width:100%;margin-top:10px;border-radius:12px;display:none;" />
     </div>
@@ -731,7 +731,18 @@ function updateBasisText(){
     if(sh){
       const ci = sh.ci95;
       const sig = sh.p_ttest < 0.05;
-      find.innerHTML = `<strong>Novel angle — does the winner change on LSD?</strong> Per subject we measure the geometric−connectome advantage (area under the accuracy curve) in each state; under LSD it shifts toward geometry by Δ = ${delta>=0?'+':''}${delta.toFixed(3)} (95% CI [${ci[0]>=0?'+':''}${ci[0].toFixed(3)}, ${ci[1]>=0?'+':''}${ci[1].toFixed(3)}]). This is a <strong>within-subject</strong> change, ${sig?'<strong>consistent across all '+sh.n+' subjects</strong>':'tested across '+sh.n+' subjects'}: paired t = ${sh.t.toFixed(2)}, ${fmtP(sh.p_ttest)}; Wilcoxon ${fmtP(sh.p_wilcoxon)}; Cohen's d_z = ${sh.cohen_dz.toFixed(2)} (${Math.abs(sh.cohen_dz)>=0.8?'large':Math.abs(sh.cohen_dz)>=0.5?'medium':'small'} effect)${flips?' — enough to flip their pooled ranking':''}. So under a psychedelic, activity reliably drifts toward smoother geometric (shape) patterns and away from specific wiring.`;
+      const permTxt = sh.perm ? `; exact sign-flip permutation ${fmtP(sh.perm.p)}` : '';
+      const rb = BASIS.summary.robustness;
+      let robustTxt = '';
+      if(rb){
+        const dn = rb.denoised_shift;
+        if(rb.survives_nuisance_regression){
+          robustTxt = ` <strong>Robustness:</strong> the shift <strong>survives nuisance regression</strong> (global-signal regression + detrend + DVARS frame censoring, ${Math.round(rb.mean_frames_kept_frac*100)}% of frames kept) — it attenuates from Δ ${delta>=0?'+':''}${delta.toFixed(3)} to ${dn.mean_diff>=0?'+':''}${dn.mean_diff.toFixed(3)} but stays significant (paired ${fmtP(dn.p_ttest)}, permutation ${fmtP(dn.perm.p)}, d_z = ${dn.cohen_dz.toFixed(2)}). So it is not purely a global-signal/motion artifact.`;
+        } else {
+          robustTxt = ` <strong>Robustness caveat:</strong> after nuisance regression (GSR + detrend + censoring) the shift drops to Δ ${dn.mean_diff>=0?'+':''}${dn.mean_diff.toFixed(3)} (${fmtP(dn.p_ttest)}) — consistent with a global-signal/motion contribution, so treat it as preliminary.`;
+        }
+      }
+      find.innerHTML = `<strong>Novel angle — does the winner change on LSD?</strong> Per subject we measure the geometric−connectome advantage (area under the accuracy curve) in each state; under LSD it shifts toward geometry by Δ = ${delta>=0?'+':''}${delta.toFixed(3)} (95% CI [${ci[0]>=0?'+':''}${ci[0].toFixed(3)}, ${ci[1]>=0?'+':''}${ci[1].toFixed(3)}]). This is a <strong>within-subject</strong> change, ${sig?'<strong>consistent across all '+sh.n+' subjects</strong>':'tested across '+sh.n+' subjects'}: paired t = ${sh.t.toFixed(2)}, ${fmtP(sh.p_ttest)}; Wilcoxon ${fmtP(sh.p_wilcoxon)}${permTxt}; Cohen's d_z = ${sh.cohen_dz.toFixed(2)} (${Math.abs(sh.cohen_dz)>=0.8?'large':Math.abs(sh.cohen_dz)>=0.5?'medium':'small'} effect)${flips?' — enough to flip their pooled ranking':''}.${robustTxt} So under a psychedelic, activity reliably drifts toward smoother geometric (shape) patterns and away from specific wiring.`;
     } else {
       find.innerHTML = `<strong>Novel angle — does the winner change on LSD?</strong> The geometric−connectome gap shifts by ${delta>=0?'+':''}${delta.toFixed(3)} from placebo to LSD, so the geometric (shape) basis <strong>${dir}</strong> the connectome (wiring) basis under LSD${flips ? ' — enough to flip their ranking' : ''}.`;
     }
@@ -742,7 +753,9 @@ function updateBasisText(){
     const delta = BASIS.summary.geometric_minus_connectome_auc.delta_lsd_minus_placebo;
     if(sh){
       const pTxt = sh.p_ttest < 0.001 ? 'p<0.001' : 'p='+sh.p_ttest.toFixed(3);
-      fb.textContent = `All three bases reconstruct comparably, but LSD reliably shifts activity toward the geometric (shape) basis and away from the connectome (wiring): per-subject geometric−connectome advantage rises by Δ ${delta>=0?'+':''}${delta.toFixed(3)} (paired t=${sh.t.toFixed(2)}, ${pTxt}, d_z=${sh.cohen_dz.toFixed(2)}, n=${sh.n}).`;
+      const rb = BASIS.summary.robustness;
+      const survTxt = rb ? (rb.survives_nuisance_regression ? ' Survives nuisance regression (GSR+detrend+censoring).' : ' Weakens under nuisance regression — preliminary.') : '';
+      fb.textContent = `All three bases reconstruct comparably, but LSD reliably shifts activity toward the geometric (shape) basis and away from the connectome (wiring): per-subject geometric−connectome advantage rises by Δ ${delta>=0?'+':''}${delta.toFixed(3)} (paired t=${sh.t.toFixed(2)}, ${pTxt}, d_z=${sh.cohen_dz.toFixed(2)}, n=${sh.n}).${survTxt}`;
     } else {
       fb.textContent = `All three bases are close (${best} best overall — geometry does at least as well as wiring). Under LSD the geometric basis ${delta>0?'gains on':'loses to'} the connectome (Δ ${delta>=0?'+':''}${delta.toFixed(3)}), n=${BASIS.meta.n_subjects}.`;
     }

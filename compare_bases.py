@@ -171,19 +171,70 @@ def reconstruction_curve(basis: np.ndarray, Y: np.ndarray, grid: list[int]) -> l
     return out
 
 
-def parcel_maps(subjects: list[str], condition: str, masker) -> np.ndarray:
-    """Concatenate per-parcel z-scored BOLD frames for one condition (400 x T)."""
-    cols = []
-    for spec in collect_runs(subjects):
+def regress_nuisance(ts: np.ndarray) -> np.ndarray:
+    """Detrend, global-signal-regress, and DVARS-censor one run.
+
+    ts: (n_parcels, T) raw parcel BOLD -> cleaned (n_parcels, T_kept).
+
+    This raw OpenNeuro dataset ships without fmriprep motion parameters, so we
+    apply the strongest confound model computable from the parcel time series
+    alone — the kind of nuisance regression a reviewer would demand before
+    believing a drug-state effect is neural rather than motion/physiology:
+
+      * constant + linear + quadratic drift     (scanner drift)
+      * global signal and its temporal deriv     (whole-brain motion / arousal —
+                                                  the dominant psychedelic-state
+                                                  confound; this is GSR)
+      * DVARS-based frame censoring (Tukey fence) as a motion-spike proxy
+    """
+    n, T = ts.shape
+    X = ts.T.astype(float)                       # (T, n)
+    tn = np.linspace(-1.0, 1.0, T)
+    gs = X.mean(axis=1)                          # global signal
+    gsd = np.gradient(gs)
+    R = np.column_stack([np.ones(T), tn, tn ** 2, gs, gsd])
+    beta, *_ = np.linalg.lstsq(R, X, rcond=None)
+    Xc = X - R @ beta                            # residuals (T, n)
+    dv = np.zeros(T)
+    dv[1:] = np.sqrt((np.diff(Xc, axis=0) ** 2).mean(axis=1))   # DVARS
+    q1, q3 = np.percentile(dv[1:], [25, 75])
+    keep = dv <= (q3 + 1.5 * (q3 - q1))          # Tukey upper fence
+    keep[0] = True
+    if keep.sum() < max(10, 0.5 * T):            # safety: never drop > half
+        keep = np.ones(T, dtype=bool)
+    return Xc[keep].T                            # (n, T_kept)
+
+
+def _zscore_run(ts: np.ndarray) -> np.ndarray:
+    mu = ts.mean(axis=1, keepdims=True)
+    sd = ts.std(axis=1, keepdims=True)
+    sd[sd < 1e-9] = 1.0
+    return (ts - mu) / sd
+
+
+def subject_runs(subject: str, condition: str, masker) -> list[np.ndarray]:
+    """Raw (n_parcels, T) parcel BOLD for each run of one subject/condition."""
+    runs = []
+    for spec in collect_runs([subject]):
         if spec["condition"] != condition:
             continue
         path = download_openneuro(spec["key"])
-        ts = extract_parcel_timeseries(path, masker)         # (400, T)
-        mu = ts.mean(axis=1, keepdims=True)
-        sd = ts.std(axis=1, keepdims=True)
-        sd[sd < 1e-9] = 1.0
-        cols.append((ts - mu) / sd)
-    return np.concatenate(cols, axis=1)
+        runs.append(extract_parcel_timeseries(path, masker))
+    return runs
+
+
+def assemble_maps(runs: list[np.ndarray], denoise: bool) -> tuple[np.ndarray | None, float]:
+    """Optionally clean, z-score per run, concatenate. Returns (map, kept_frac)."""
+    cols, kept, total = [], 0, 0
+    for ts in runs:
+        total += ts.shape[1]
+        if denoise:
+            ts = regress_nuisance(ts)
+        kept += ts.shape[1]
+        cols.append(_zscore_run(ts))
+    if not cols:
+        return None, 0.0
+    return np.concatenate(cols, axis=1), (kept / total if total else 0.0)
 
 
 def modes_to_threshold(grid: list[int], curve: list[float], thr: float) -> float:
@@ -254,6 +305,48 @@ def paired_stats(a: list[float], b: list[float]) -> dict:
     return out
 
 
+def signflip_perm(delta: list[float]) -> dict:
+    """Exact sign-flip permutation test for paired data (null = label swap).
+
+    Under H0 the LSD/placebo label is exchangeable within each subject, i.e. the
+    per-subject difference is equally likely to be +d or -d. For n<=20 we
+    enumerate all 2^n sign assignments exactly; otherwise we sample. The p-value
+    is the two-sided fraction of permuted means at least as extreme as observed.
+    """
+    import itertools
+
+    d = np.asarray(delta, float)
+    n = d.size
+    if n == 0:
+        return {"p": float("nan"), "n_perms": 0, "exact": False, "observed_mean": float("nan")}
+    obs = float(d.mean())
+    if n <= 20:
+        signs = np.array(list(itertools.product([1.0, -1.0], repeat=n)))
+        exact = True
+    else:
+        rng = np.random.default_rng(0)
+        signs = rng.choice([1.0, -1.0], size=(50000, n))
+        exact = False
+    null = (signs * d).mean(axis=1)
+    p = float(np.sum(np.abs(null) >= abs(obs) - 1e-15) / null.shape[0])
+    return {"p": p, "n_perms": int(null.shape[0]), "exact": exact, "observed_mean": obs}
+
+
+def subject_gaps(maps: dict, paired_subjects: list[str], bases: dict,
+                 grid: list[int], conds: tuple) -> tuple[list[float], list[float], dict]:
+    """Per-subject AUC(geometric)-AUC(connectome) gap for each condition."""
+    per = {cond: {name: [] for name in bases} for cond in conds}
+    for s in paired_subjects:
+        for cond in conds:
+            for name, basis in bases.items():
+                per[cond][name].append(
+                    auc(grid, reconstruction_curve(basis, maps[s][cond], grid))
+                )
+    gap_lsd = [g - c for g, c in zip(per["lsd"]["geometric"], per["lsd"]["connectome"])]
+    gap_plcb = [g - c for g, c in zip(per["placebo"]["geometric"], per["placebo"]["connectome"])]
+    return gap_lsd, gap_plcb, per
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--modes", type=int, default=200, help="Max modes per basis")
@@ -283,27 +376,32 @@ def main() -> None:
 
     print(f"Extracting per-subject parcel BOLD for {len(subjects)} subjects …")
     masker = fetch_schaefer_masker()
-    # Per-subject, per-condition maps (z-scored per run inside parcel_maps).
-    subj_maps: dict[str, dict[str, np.ndarray | None]] = {}
+    # Extract raw runs once, then build raw + nuisance-regressed maps from them.
+    raw_maps: dict[str, dict[str, np.ndarray | None]] = {}
+    dn_maps: dict[str, dict[str, np.ndarray | None]] = {}
+    kept_fracs: list[float] = []
     for sub in subjects:
-        subj_maps[sub] = {}
+        raw_maps[sub], dn_maps[sub] = {}, {}
         for cond in conds:
             try:
-                arr = parcel_maps([sub], cond, masker)
+                runs = subject_runs(sub, cond, masker)
             except Exception as exc:  # noqa: BLE001 - skip a missing/broken run
                 print(f"  ! {sub} {cond}: {exc}")
-                arr = None
-            subj_maps[sub][cond] = arr
+                runs = []
+            raw_maps[sub][cond], _ = assemble_maps(runs, denoise=False)
+            dn_maps[sub][cond], frac = assemble_maps(runs, denoise=True)
+            if runs:
+                kept_fracs.append(frac)
 
     paired_subjects = [
         s for s in subjects
-        if subj_maps[s]["lsd"] is not None and subj_maps[s]["placebo"] is not None
+        if raw_maps[s]["lsd"] is not None and raw_maps[s]["placebo"] is not None
     ]
 
-    # Pooled per condition (drives the headline curves / chart) — unchanged metric.
+    # Pooled per condition (drives the headline curves / chart) — raw metric.
     Y = {
         cond: np.concatenate(
-            [subj_maps[s][cond] for s in subjects if subj_maps[s][cond] is not None],
+            [raw_maps[s][cond] for s in subjects if raw_maps[s][cond] is not None],
             axis=1,
         )
         for cond in conds
@@ -334,42 +432,64 @@ def main() -> None:
         "delta_lsd_minus_placebo": geo_gap["lsd"] - geo_gap["placebo"],
     }
 
-    # ---- Per-subject paired test (the defensible version of the shift) --------
-    print(f"Per-subject AUC for paired test ({len(paired_subjects)} subjects) …")
-    per_auc = {cond: {name: [] for name in bases} for cond in conds}
-    for s in paired_subjects:
-        for cond in conds:
-            for name, basis in bases.items():
-                c = reconstruction_curve(basis, subj_maps[s][cond], grid)
-                per_auc[cond][name].append(auc(grid, c))
-
-    gap_lsd = [
-        g - c for g, c in zip(per_auc["lsd"]["geometric"], per_auc["lsd"]["connectome"])
-    ]
-    gap_plcb = [
-        g - c
-        for g, c in zip(per_auc["placebo"]["geometric"], per_auc["placebo"]["connectome"])
-    ]
+    # ---- Per-subject paired test (raw) + exact sign-flip permutation null -----
+    print(f"Per-subject paired test ({len(paired_subjects)} subjects) …")
+    gap_lsd, gap_plcb, _ = subject_gaps(raw_maps, paired_subjects, bases, grid, conds)
+    delta_raw = [a - b for a, b in zip(gap_lsd, gap_plcb)]
     zeros = [0.0] * len(paired_subjects)
+    shift_raw = paired_stats(gap_lsd, gap_plcb)
+    shift_raw["perm"] = signflip_perm(delta_raw)
     summary["paired"] = {
         "metric": "per-subject AUC(geometric) - AUC(connectome)",
         "n_subjects": len(paired_subjects),
         "subjects": paired_subjects,
         "per_subject": {"gap_lsd": gap_lsd, "gap_placebo": gap_plcb},
         # Does the geometric advantage change between states? (the headline)
-        "lsd_minus_placebo_shift": paired_stats(gap_lsd, gap_plcb),
+        "lsd_minus_placebo_shift": shift_raw,
         # Within each state, does geometric differ from connectome? (gap vs 0)
         "geometric_vs_connectome_lsd": paired_stats(gap_lsd, zeros),
         "geometric_vs_connectome_placebo": paired_stats(gap_plcb, zeros),
     }
 
+    # ---- Robustness: rerun the whole paired test after nuisance regression ----
+    print("Robustness: nuisance-regressed pipeline (GSR + detrend + DVARS censor) …")
+    gl_dn, gp_dn, _ = subject_gaps(dn_maps, paired_subjects, bases, grid, conds)
+    delta_dn = [a - b for a, b in zip(gl_dn, gp_dn)]
+    shift_dn = paired_stats(gl_dn, gp_dn)
+    shift_dn["perm"] = signflip_perm(delta_dn)
+    survives = bool(
+        shift_dn["p_ttest"] < 0.05
+        and shift_dn["perm"]["p"] < 0.05
+        and np.sign(shift_dn["mean_diff"]) == np.sign(shift_raw["mean_diff"])
+    )
+    summary["robustness"] = {
+        "denoise": (
+            "detrend(linear+quadratic) + global-signal regression (+ derivative) "
+            "+ DVARS Tukey-fence frame censoring"
+        ),
+        "note": (
+            "Raw OpenNeuro ds003059 has no fmriprep motion params; this is the "
+            "strongest nuisance model computable from parcel time series alone. "
+            "GSR removes the dominant motion/arousal confound for drug-state "
+            "comparisons. Permutation = exact within-subject sign-flip null."
+        ),
+        "mean_frames_kept_frac": float(np.mean(kept_fracs)) if kept_fracs else float("nan"),
+        "raw_shift": shift_raw,
+        "denoised_shift": shift_dn,
+        "denoised_per_subject": {"gap_lsd": gl_dn, "gap_placebo": gp_dn},
+        "denoised_geometric_vs_connectome_lsd_p": paired_stats(gl_dn, zeros)["p_ttest"],
+        "denoised_geometric_vs_connectome_placebo_p": paired_stats(gp_dn, zeros)["p_ttest"],
+        "survives_nuisance_regression": survives,
+    }
+
     summary["interpretation"] = (
         "Higher = better reconstruction with fewer modes. 'ranking' lists bases "
-        "best→worst by area under the accuracy curve. The pooled "
-        "geometric−connectome gap is suggestive; 'paired' reports the defensible "
-        "within-subject test: per subject we take AUC(geometric)−AUC(connectome) "
-        "for LSD and placebo and test the LSD−placebo shift across subjects "
-        "(paired t + Wilcoxon, with Cohen's d_z and 95% CI)."
+        "best→worst by area under the accuracy curve. 'paired' is the within-subject "
+        "test of the LSD−placebo shift in AUC(geometric)−AUC(connectome) (paired t + "
+        "Wilcoxon + exact sign-flip permutation, Cohen's d_z, 95% CI). 'robustness' "
+        "reruns that same test after nuisance regression (GSR + detrend + DVARS "
+        "censoring); 'survives_nuisance_regression' is the honest bottom line — the "
+        "effect is only believable if it holds there too."
     )
 
     payload = {
@@ -403,11 +523,21 @@ def main() -> None:
     print("geo−conn gap:   ", summary["geometric_minus_connectome_auc"])
     sh = summary["paired"]["lsd_minus_placebo_shift"]
     print(
-        f"PAIRED shift (LSD−placebo, n={sh['n']}): "
+        f"PAIRED shift RAW (LSD−placebo, n={sh['n']}): "
         f"Δ={sh['mean_diff']:+.4f} 95%CI[{sh['ci95'][0]:+.4f},{sh['ci95'][1]:+.4f}] "
-        f"t={sh['t']:.2f} p={sh['p_ttest']:.4f} "
-        f"Wilcoxon p={sh['p_wilcoxon']:.4f} d_z={sh['cohen_dz']:.2f}"
+        f"t={sh['t']:.2f} p={sh['p_ttest']:.4f} Wilcoxon p={sh['p_wilcoxon']:.4f} "
+        f"perm p={sh['perm']['p']:.4f} d_z={sh['cohen_dz']:.2f}"
     )
+    rb = summary["robustness"]
+    dn = rb["denoised_shift"]
+    print(
+        f"PAIRED shift DENOISED (GSR+detrend+censor, kept "
+        f"{rb['mean_frames_kept_frac']*100:.0f}% frames): "
+        f"Δ={dn['mean_diff']:+.4f} 95%CI[{dn['ci95'][0]:+.4f},{dn['ci95'][1]:+.4f}] "
+        f"t={dn['t']:.2f} p={dn['p_ttest']:.4f} Wilcoxon p={dn['p_wilcoxon']:.4f} "
+        f"perm p={dn['perm']['p']:.4f} d_z={dn['cohen_dz']:.2f}"
+    )
+    print(f"SURVIVES nuisance regression: {rb['survives_nuisance_regression']}")
 
 
 def plot_results(payload: dict, out_png: Path) -> None:
@@ -443,25 +573,36 @@ def plot_results(payload: dict, out_png: Path) -> None:
         gp = paired["per_subject"]["gap_placebo"]
         gl = paired["per_subject"]["gap_lsd"]
         sh = paired["lsd_minus_placebo_shift"]
+        rb = payload.get("summary", {}).get("robustness")
         x = [0, 1]
         for a, b in zip(gp, gl):
             color = "#7CE0B0" if b > a else "#ff9a9a"
-            ax2.plot(x, [a, b], color=color, lw=1, alpha=0.55,
+            ax2.plot(x, [a, b], color=color, lw=1, alpha=0.5,
                      marker="o", ms=3, mfc=color, mec="none")
         ax2.plot(x, [float(np.mean(gp)), float(np.mean(gl))],
-                 color="white", lw=2.5, marker="o", ms=6, zorder=5, label="mean")
+                 color="white", lw=2.5, marker="o", ms=6, zorder=5, label="mean (raw)")
+        title2 = ""
+        if rb and rb.get("denoised_per_subject"):
+            gpd = rb["denoised_per_subject"]["gap_placebo"]
+            gld = rb["denoised_per_subject"]["gap_lsd"]
+            ax2.plot(x, [float(np.mean(gpd)), float(np.mean(gld))],
+                     color="#8ec5ff", lw=2.5, ls=(0, (4, 2)), marker="s", ms=6,
+                     zorder=6, label="mean (denoised)")
+            dn = rb["denoised_shift"]
+            title2 = f"\ndenoised: p={dn['p_ttest']:.3f}, perm p={dn['perm']['p']:.3f}"
         ax2.axhline(0, color="#555", lw=1, ls="--")
         ax2.set_xlim(-0.35, 1.35)
         ax2.set_xticks(x)
         ax2.set_xticklabels(["placebo", "LSD"])
         ax2.set_ylabel("AUC(geometric) − AUC(connectome)")
-        p = sh["p_ttest"]
+        permp = sh.get("perm", {}).get("p", float("nan"))
         ax2.set_title(
-            f"paired shift  Δ={sh['mean_diff']:+.3f}\n"
-            f"t={sh['t']:.2f}, p={p:.3f}, d_z={sh['cohen_dz']:.2f}  (n={sh['n']})",
-            color="white", fontsize=10,
+            f"paired shift  Δ={sh['mean_diff']:+.3f}  (n={sh['n']})\n"
+            f"raw: p={sh['p_ttest']:.3f}, perm p={permp:.3f}, d_z={sh['cohen_dz']:.2f}"
+            f"{title2}",
+            color="white", fontsize=9.5,
         )
-        ax2.legend(facecolor="#111722", edgecolor="#333", labelcolor="white", loc="best")
+        ax2.legend(facecolor="#111722", edgecolor="#333", labelcolor="white", loc="best", fontsize=8)
     else:
         ax2.text(0.5, 0.5, "no paired data", color="#9fb0c8",
                  ha="center", va="center", transform=ax2.transAxes)

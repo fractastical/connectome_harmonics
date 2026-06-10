@@ -16,7 +16,7 @@ Built on real data: the **HCP-YA group-average Schaefer-400 structural connectom
 |---|----------|--------|
 | 1 | **Does LSD reorganize the brain's harmonic spectrum?** | **Yes (in direction).** Low-frequency harmonics lose power under LSD (LSD/placebo ≈ **0.77**), matching [Atasoy 2017](https://www.nature.com/articles/s41598-017-17546-0). The high-frequency *increase* doesn't separate at parcellated scale. |
 | 2 | **Is there a geometric "latent space" in the brain?** | **Yes.** The 7 Yeo networks separate into a continuous layout in harmonic (eigenmap) coordinates — emerging from connectivity alone, with no labels given to the algorithm. |
-| 3 | **Shape vs wiring — which explains activity, and does LSD change it?** | **A coarse tie; geometry ≳ wiring** (distance-only EDR basis best overall, à la [Pang 2023](https://www.nature.com/articles/s41586-023-06098-1)). Novel angle: under LSD the **geometric basis gains on the connectome** in a **within-subject paired test** — Δ ≈ +0.006, 95% CI [+0.003, +0.009], paired t(11) = 4.6, **p = 0.0008** (Wilcoxon p = 0.001), Cohen's d_z = 1.3 (large), consistent across all 12 subjects. |
+| 3 | **Shape vs wiring — which explains activity, and does LSD change it?** | **A coarse tie; geometry ≳ wiring** (distance-only EDR basis best overall, à la [Pang 2023](https://www.nature.com/articles/s41586-023-06098-1)). Novel angle: under LSD the **geometric basis gains on the connectome** in a **within-subject paired test** — Δ ≈ +0.006, 95% CI [+0.003, +0.009], paired t(11) = 4.6, **p = 0.0008** (Wilcoxon p = 0.001, exact permutation p = 0.001), Cohen's d_z = 1.3 (large), 12/12 subjects. **Survives nuisance regression** (GSR + detrend + DVARS censoring): attenuates to Δ ≈ +0.004 but stays significant (p = 0.002, perm p = 0.003) — not merely a motion/global-signal artifact. |
 
 > **Scope & honesty:** results are **group-average and parcellated (400 regions)** — real data, but coarse-grained, not individual or diagnostic, and not medical advice. The geometry-vs-connectivity result is illustrative, not a settlement of that debate (cf. [Mansour 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1)); the decisive test needs vertex-resolution surfaces.
 
@@ -192,6 +192,17 @@ Outputs: `lsd_results/basis_comparison.json` + `.png` (rendered as the interacti
 | Direction | geometry gains in **12 / 12** subjects |
 
 So the shift is not just a pooled curiosity: under LSD, activity reliably moves toward the smoother **geometric (shape)** basis and away from specific **wiring**, consistently within every subject. The third panel of `basis_comparison.png` shows the per-subject paired lines. Numbers live in `basis_comparison.json` under `summary.paired`.
+
+**Does it survive confound control?** Yes. The raw dataset has no fmriprep motion parameters, so we apply the strongest nuisance model computable from the parcel time series — detrend (linear+quadratic) + **global-signal regression** (the dominant motion/arousal confound for drug-state comparisons) + **DVARS frame censoring** — and rerun the identical paired test, plus an **exact within-subject sign-flip permutation** null (all 2¹² = 4096 assignments).
+
+| | Δ (LSD − placebo) | paired *p* | permutation *p* | d_z |
+|---|---|---|---|---|
+| Raw | +0.0058 | 0.0008 | 0.0010 | 1.33 |
+| Nuisance-regressed (98% frames kept) | +0.0044 | 0.0017 | 0.0029 | 1.19 |
+
+The effect attenuates by ~25% under GSR (so part of the raw signal was global-signal-related) but stays significant with a large effect size — it is **not merely a motion or global-signal artifact**. Robustness numbers live in `basis_comparison.json` under `summary.robustness`.
+
+Honest residual limits: no true (24-parameter) motion regression is possible without fmriprep derivatives; after denoising neither basis significantly *beats* the other within a single state (the claim is about the *shift*, not the absolute winner); single cohort, n = 12, parcellated.
 
 > ⚠️ Parcellated resolution is exactly where the geometric advantage is *weakest*, and geometric modes here are hemisphere-separable. This illustrates the method and the LSD question; it does **not** settle the geometry-vs-connectivity debate (cf. [Mansour et al. 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1)). The decisive test needs vertex-resolution surfaces and a carefully built connectome.
 
