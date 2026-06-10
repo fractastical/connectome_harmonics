@@ -1,10 +1,24 @@
 # Connectome Harmonics
 
-An interactive educational simulator for **graph Laplacian harmonics** on brain-like networks — the mathematical framework behind [connectome-specific harmonic waves](https://www.nature.com/articles/ncomms10340) and their reorganization under [LSD](https://www.nature.com/articles/s41598-017-17546-0).
+An interactive investigation of **connectome harmonics** — graph-Laplacian eigenmodes of the brain — run on real human data, with a live simulator to explore them.
 
 **Live demo:** https://fractastical.github.io/connectome_harmonics/
 
 ![Harmonic mode animation](connectome_harmonics_preview.gif)
+
+---
+
+## What this tests & what we found
+
+Built on real data: the **HCP-YA group-average Schaefer-400 structural connectome** and a **12-subject LSD fMRI cohort** ([OpenNeuro ds003059](https://openneuro.org/datasets/ds003059)). Three questions, three results — each reproducible with the scripts here and inspectable in the live demo's "What this demonstrates" panel.
+
+| # | Question | Result |
+|---|----------|--------|
+| 1 | **Does LSD reorganize the brain's harmonic spectrum?** | **Yes (in direction).** Low-frequency harmonics lose power under LSD (LSD/placebo ≈ **0.77**), matching [Atasoy 2017](https://www.nature.com/articles/s41598-017-17546-0). The high-frequency *increase* doesn't separate at parcellated scale. |
+| 2 | **Is there a geometric "latent space" in the brain?** | **Yes.** The 7 Yeo networks separate into a continuous layout in harmonic (eigenmap) coordinates — emerging from connectivity alone, with no labels given to the algorithm. |
+| 3 | **Shape vs wiring — which explains activity, and does LSD change it?** | **A coarse tie; geometry ≳ wiring** (distance-only EDR basis best overall, à la [Pang 2023](https://www.nature.com/articles/s41586-023-06098-1)). Novel angle: under LSD the **geometric basis gains on the connectome** (Δ ≈ +0.006, flips the ranking). Suggestive, n=12, not significance-tested. |
+
+> **Scope & honesty:** results are **group-average and parcellated (400 regions)** — real data, but coarse-grained, not individual or diagnostic, and not medical advice. The geometry-vs-connectivity result is illustrative, not a settlement of that debate (cf. [Mansour 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1)); the decisive test needs vertex-resolution surfaces.
 
 ---
 

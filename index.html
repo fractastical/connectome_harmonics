@@ -30,7 +30,18 @@
   .hud { position: absolute; left: 18px; bottom: 18px; background: rgba(9, 11, 16, .72); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 12px 14px; min-width: 260px; backdrop-filter: blur(8px); }
   .hud .line { display: flex; justify-content: space-between; gap: 18px; font-variant-numeric: tabular-nums; font-size: 13px; margin: 4px 0; }
   .hud .line span:first-child { color: var(--muted); }
-  .sidebar { background: linear-gradient(180deg, #101725, #080b11); border-left: 1px solid rgba(255,255,255,.08); padding: 18px; overflow-y: auto; }
+  .sidebar { background: linear-gradient(180deg, #101725, #080b11); border-left: 1px solid rgba(255,255,255,.08); padding: 18px; overflow-y: auto; display: flex; flex-direction: column; }
+  .card.findings { border-color: rgba(142,197,255,.4); background: linear-gradient(180deg, rgba(142,197,255,.12), rgba(201,160,255,.06)); }
+  .findings-list { list-style: none; padding: 0; margin: 12px 0 0; counter-reset: f; }
+  .findings-list li { position: relative; padding: 11px 0 11px 30px; border-top: 1px solid rgba(255,255,255,.08); }
+  .findings-list li:first-of-type { border-top: none; }
+  .findings-list li:before { counter-increment: f; content: counter(f); position: absolute; left: 0; top: 11px; width: 20px; height: 20px; border-radius: 50%; background: #1a3350; color: #cfe3ff; font-size: 11px; display: grid; place-items: center; border: 1px solid rgba(142,197,255,.4); }
+  .findings-list .q { display: block; font-size: 12.5px; font-weight: 650; color: #eaf1fc; line-height: 1.4; }
+  .findings-list .a { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+  .findings-list .jump { display: inline-block; margin-top: 5px; font-size: 11.5px; color: var(--accent); text-decoration: none; cursor: pointer; }
+  .findings-list .jump:hover { text-decoration: underline; }
+  .card.flash { animation: cardflash 1.4s ease; }
+  @keyframes cardflash { 0%,100% { box-shadow: 0 12px 34px rgba(0,0,0,.18); } 30% { box-shadow: 0 0 0 2px rgba(142,197,255,.55); } }
   .card { background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 14px; margin-bottom: 14px; box-shadow: 0 12px 34px rgba(0,0,0,.18); }
   .card.tour-active { border-color: rgba(142,197,255,.45); box-shadow: 0 0 0 1px rgba(142,197,255,.15); }
   .card h2 { font-size: 14px; margin: 0 0 10px; letter-spacing: .16px; }
@@ -85,7 +96,29 @@
     </div>
   </main>
   <aside class="sidebar">
-    <div class="card">
+    <div class="card findings" style="order:1">
+      <h2>What this demonstrates</h2>
+      <p class="small">An interactive study of <strong>connectome harmonics</strong> on real human data — the HCP group-average structural connectome plus a 12-subject LSD fMRI cohort (<a href="https://openneuro.org/datasets/ds003059" target="_blank" rel="noopener">OpenNeuro ds003059</a>). Three questions are tested, each with a result you can inspect below:</p>
+      <ol class="findings-list">
+        <li>
+          <span class="q">1. Does LSD reorganize the brain's harmonic spectrum?</span>
+          <span class="a" id="findLsd">Low-frequency harmonics lose power under LSD (LSD/placebo ≈ 0.77) — the direction reported by Atasoy 2017.</span>
+          <a class="jump" data-target="card-lsd">see the spectra ↓</a>
+        </li>
+        <li>
+          <span class="q">2. Is there a geometric “latent space” in the brain?</span>
+          <span class="a" id="findLatent">Yes — the seven functional networks separate into a continuous layout in harmonic coordinates, with no labels given to the algorithm.</span>
+          <a class="jump" data-target="card-latent">explore it ↓</a>
+        </li>
+        <li>
+          <span class="q">3. Shape vs wiring — which explains activity, and does LSD change it?</span>
+          <span class="a" id="findBasis">All bases are close; cortical shape (and a distance surrogate) do at least as well as wiring. Under LSD the geometric basis gains on the connectome.</span>
+          <a class="jump" data-target="card-basis">see the curves ↓</a>
+        </li>
+      </ol>
+    </div>
+
+    <div class="card" style="order:5">
       <h2>Connectome data</h2>
       <select id="dataset">
         <option value="connectome_harmonics_data.json">Toy synthetic graph</option>
@@ -94,7 +127,7 @@
       <p class="small" style="margin-top:8px;">Switch graphs to compare a teaching toy model with a real group-average human structural connectome.</p>
     </div>
 
-    <div class="card" id="tourCard">
+    <div class="card" id="tourCard" style="order:7">
       <h2>Mode tour</h2>
       <p class="small">Auto-cycle through harmonic modes with short explanations. Low modes are broad global waves; high modes are finer patterns.</p>
       <div class="row" style="margin-top:10px;">
@@ -105,7 +138,7 @@
       <div class="tour-meta" id="tourMeta"></div>
     </div>
 
-    <div class="card">
+    <div class="card" style="order:6">
       <h2>Simulation</h2>
       <label for="model">field model</label>
       <select id="model">
@@ -134,14 +167,14 @@
       <div class="legend"><span class="small">−</span><div class="bar"></div><span class="small">+</span></div>
     </div>
 
-    <div class="card">
+    <div class="card" style="order:8">
       <h2>What this simulates</h2>
       <p class="small">Nodes are brain regions; edges are structural connections. The normalized graph Laplacian turns connectivity into a geometry. Its eigenvectors <em>v<sub>k</sub></em> are spatial harmonics — the connectome’s allowed standing-wave patterns.</p>
       <div class="eq">x<sub>i</sub>(t) = a<sub>k</sub> v<sub>k,i</sub> cos(√λ<sub>k</sub> · t)</div>
       <p class="small">This demo animates those basis patterns. Real fMRI activity can be decomposed into the same harmonics (see literature below).</p>
     </div>
 
-    <div class="card">
+    <div class="card" id="card-latent" style="order:4">
       <h2>Geometric latent space</h2>
       <p class="small">The harmonics aren't just waves — they're <strong>coordinate axes</strong>. Each region gets a position (v<sub>a,i</sub>, v<sub>b,i</sub>) in a low-dimensional embedding (this is a Laplacian eigenmap / diffusion-map latent space). If a smooth geometry exists, the seven <a href="https://pubmed.ncbi.nlm.nih.gov/21653723/" target="_blank" rel="noopener">Yeo functional networks</a> should separate into a continuous layout — without ever telling the algorithm what they are.</p>
       <div id="latentWrap" style="margin-top:8px;">
@@ -164,7 +197,7 @@
       <p class="small" id="latentUnavailable" style="display:none;color:#9fb0c6;">Load the <strong>HCP structural SC</strong> dataset (top) to explore its latent space — the toy graph has no network labels.</p>
     </div>
 
-    <div class="card">
+    <div class="card" id="card-lsd" style="order:2">
       <h2>LSD &amp; connectome harmonics</h2>
       <p class="small">The paper <a href="https://www.nature.com/articles/s41598-017-17546-0" target="_blank" rel="noopener">Atasoy et al. 2017 (Scientific Reports)</a> — often discussed as “connectome-specific harmonic waves under LSD” — does <strong>not</strong> publish a downloadable harmonic-power dataset. It reports findings from decomposing LSD/placebo fMRI:</p>
       <div class="lsd-callout small">
@@ -190,7 +223,7 @@
       <img id="lsdPlot" src="lsd_results/lsd_harmonic_spectra.png" alt="LSD vs placebo harmonic power spectra (static fallback)" style="width:100%;margin-top:10px;border-radius:12px;display:none;" />
     </div>
 
-    <div class="card">
+    <div class="card" id="card-basis" style="order:3">
       <h2>Geometry vs connectivity</h2>
       <p class="small">Is brain activity shaped more by the connectome's <em>wiring</em> or by the cortex's <em>shape</em>? Following <a href="https://www.nature.com/articles/s41586-023-06098-1" target="_blank" rel="noopener">Pang et al. 2023</a>, we reconstruct the ds003059 fMRI from the first N vectors of three Schaefer-400 bases and measure accuracy vs N: <span style="color:#c9a0ff;">connectome</span> (wiring), <span style="color:#7CE0B0;">geometric</span> (cortical shape, Laplace–Beltrami modes), and <span style="color:#ffd18e;">EDR</span> (a distance-only surrogate).</p>
       <div id="basisWrap" style="display:none;margin-top:8px;">
@@ -210,7 +243,7 @@
       <img id="basisPlot" src="lsd_results/basis_comparison.png" alt="Reconstruction accuracy: connectome vs geometric vs EDR" style="width:100%;margin-top:10px;border-radius:12px;display:none;" />
     </div>
 
-    <div class="card">
+    <div class="card" style="order:9">
       <h2>References</h2>
       <ul class="refs">
         <li><a href="https://www.nature.com/articles/ncomms10340" target="_blank" rel="noopener">Atasoy et al. 2016</a> — Connectome-specific harmonic waves (foundational theory).</li>
@@ -221,7 +254,7 @@
       </ul>
     </div>
 
-    <p class="small" style="padding-bottom:12px;">Built on real data: the HCP-YA group-average Schaefer-400 structural connectome and the 12-subject LSD fMRI cohort from OpenNeuro ds003059. These are group-average, parcellated results for research and education — not individual or diagnostic measurements, and not medical advice. (The “toy synthetic graph” dataset is the only synthetic one.)</p>
+    <p class="small" style="padding-bottom:12px;order:10;">Built on real data: the HCP-YA group-average Schaefer-400 structural connectome and the 12-subject LSD fMRI cohort from OpenNeuro ds003059. These are group-average, parcellated results for research and education — not individual or diagnostic measurements, and not medical advice. (The “toy synthetic graph” dataset is the only synthetic one.)</p>
   </aside>
 </div>
 <script>
@@ -581,6 +614,12 @@ function updateBasisText(){
     const dir = delta > 0 ? 'gains on' : 'loses to';
     find.innerHTML = `<strong>Novel angle — does the winner change on LSD?</strong> The geometric−connectome gap shifts by ${delta>=0?'+':''}${delta.toFixed(3)} from placebo to LSD, so the geometric (shape) basis <strong>${dir}</strong> the connectome (wiring) basis under LSD${BASIS.summary.ranking.lsd.indexOf('geometric') < BASIS.summary.ranking.placebo.indexOf('geometric') ? ' — enough to flip their ranking' : ''}. Suggestive (n=${BASIS.meta.n_subjects}, not significance-tested): under a psychedelic, activity drifts toward smoother geometric patterns and away from specific wiring.`;
   }
+  const fb = document.getElementById('findBasis');
+  if (fb) {
+    const best = BASIS.summary.ranking.placebo[0];
+    const delta = BASIS.summary.geometric_minus_connectome_auc.delta_lsd_minus_placebo;
+    fb.textContent = `All three bases are close (${best} best overall — geometry does at least as well as wiring). Under LSD the geometric basis ${delta>0?'gains on':'loses to'} the connectome (Δ ${delta>=0?'+':''}${delta.toFixed(3)}), n=${BASIS.meta.n_subjects}.`;
+  }
 }
 
 async function loadBasisComparison(){
@@ -709,6 +748,12 @@ function updateLatentCaption(ax){
     .sort((a,b)=>a[1]-b[1]);
   const chain = order.map(o => NETWORK_FULL[o[0]] || o[0]).join(' → ');
   cap.innerHTML = `Networks ordered along mode ${ax+1} (− to +): <strong>${chain}</strong>. They were never labeled for the algorithm — this ordering emerges purely from structural connectivity, i.e. a real geometric latent axis.`;
+  const f = document.getElementById('findLatent');
+  if (f && order.length >= 2 && ax === 0) {
+    const lo = NETWORK_FULL[order[0][0]] || order[0][0];
+    const hi = NETWORK_FULL[order[order.length-1][0]] || order[order.length-1][0];
+    f.textContent = `Yes — the seven functional networks separate continuously in harmonic coordinates (e.g. ${lo} ↔ ${hi} along mode 1), with no labels given to the algorithm.`;
+  }
 }
 
 function wireLatentControls(){
@@ -850,6 +895,12 @@ function bindControls(){
   ui.tourStart.addEventListener('click', () => tourActive ? stopTour() : startTour());
   ui.tourStop.addEventListener('click', stopTour);
   ui.dataset.addEventListener('change', () => loadDataset(ui.dataset.value));
+  document.querySelectorAll('.jump').forEach(a => a.addEventListener('click', () => {
+    const el = document.getElementById(a.dataset.target);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  }));
 }
 
 async function loadDataset(path){
@@ -884,7 +935,7 @@ async function loadDataset(path){
 async function boot(){
   bindControls();
   const params = new URLSearchParams(location.search);
-  const initial = params.get('data') || 'connectome_harmonics_data.json';
+  const initial = params.get('data') || 'connectome_harmonics_data_hcp.json';
   if (DATASETS[initial]) ui.dataset.value = initial;
   await loadDataset(ui.dataset.value);
   if (!animStarted) { animStarted = true; requestAnimationFrame(frame); }
@@ -949,6 +1000,8 @@ async function loadLsdResults(){
       const entHigher = s.mean_entropy_lsd > s.mean_entropy_placebo;
       cap.textContent = `Group spectra, ${subj} subject${subj===1?'':'s'} (ds003059). Low-band LSD/placebo ratio ${low.toFixed(2)} (${lowTxt}); high-band ratio ${high.toFixed(2)}. Repertoire entropy ${s.mean_entropy_lsd.toFixed(2)} (LSD) vs ${s.mean_entropy_placebo.toFixed(2)} (placebo)${entHigher ? ' — slightly broader harmonic repertoire under LSD' : ''}. This is a coarse, parcellated approximation of the vertex-level result; the high-frequency increase reported by Atasoy 2017 is best resolved with the full CHAP pipeline.`;
     }
+    const f = document.getElementById('findLsd');
+    if (f) f.textContent = `Yes — low-frequency harmonics lose power under LSD (LSD/placebo ratio ${low.toFixed(2)}), the direction reported by Atasoy 2017 (n=${LSD.meta.n_subjects}, parcellated).`;
   } catch (_) {}
 }
 window.addEventListener('resize', () => { if (LSD) drawLsdChart(); });
