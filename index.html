@@ -17,8 +17,48 @@
     --lsd: #c9a0ff;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-  body { overflow: hidden; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  body { overflow-x: hidden; overflow-y: auto; }
+
+  /* ---- Top summary hero ------------------------------------------------ */
+  .hero { width: 100%; background:
+      radial-gradient(1200px 380px at 18% -10%, rgba(142,197,255,.14), transparent 60%),
+      radial-gradient(1100px 360px at 88% -16%, rgba(201,160,255,.16), transparent 60%),
+      linear-gradient(180deg, #0c111b 0%, #090b10 100%);
+    border-bottom: 1px solid rgba(255,255,255,.08); }
+  .hero-inner { max-width: 1180px; margin: 0 auto; padding: 46px 26px 30px; }
+  .kicker { display: inline-block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); background: rgba(142,197,255,.10); border: 1px solid rgba(142,197,255,.28); padding: 5px 11px; border-radius: 999px; }
+  .hero-title { font-size: clamp(26px, 4vw, 40px); line-height: 1.12; font-weight: 800; margin: 16px 0 0; letter-spacing: -.01em;
+    background: linear-gradient(92deg, #eaf2ff 0%, #c9a0ff 60%, #8ec5ff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero-thesis { color: #c2d0e6; font-size: 15.5px; line-height: 1.6; max-width: 860px; margin: 14px 0 0; }
+  .hero-datasets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 26px 0 0; }
+  .ds { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09); border-radius: 14px; padding: 13px 14px; }
+  .ds-k { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .ds-v { display: block; font-size: 13.5px; color: #eaf1fc; margin-top: 5px; line-height: 1.4; font-weight: 600; }
+  .hero-exps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 16px 0 0; }
+  .exp { background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.10); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; }
+  .exp-tag { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .exp-q { font-size: 15px; font-weight: 720; color: #f0f5ff; margin: 7px 0 0; line-height: 1.3; }
+  .exp-m { font-size: 12.5px; color: var(--muted); margin: 9px 0 0; line-height: 1.5; }
+  .exp-m b { color: #d4e2f6; font-weight: 650; }
+  .exp-r { font-size: 13px; color: #eaf1fc; margin: 11px 0 0; line-height: 1.5; padding-top: 11px; border-top: 1px solid rgba(255,255,255,.09); }
+  .exp-r .res-k { color: #7CE0B0; font-weight: 700; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pill { font-size: 11px; font-variant-numeric: tabular-nums; color: #d9e7ff; background: rgba(142,197,255,.10); border: 1px solid rgba(142,197,255,.26); border-radius: 999px; padding: 3px 9px; }
+  .pill.sig { color: #bff0d4; background: rgba(124,224,176,.12); border-color: rgba(124,224,176,.34); }
+  .hero-bottomline { margin: 18px 0 0; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(201,160,255,.34); background: linear-gradient(92deg, rgba(201,160,255,.12), rgba(142,197,255,.06)); font-size: 14.5px; line-height: 1.55; color: #f1eaff; }
+  .hero-bottomline b { color: #fff; }
+  .hero-figs { margin: 22px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .hero-figs figure { margin: 0; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.09); border-radius: 16px; padding: 12px; }
+  .hero-figs img { width: 100%; display: block; border-radius: 10px; }
+  .hero-figs figcaption { font-size: 12px; color: var(--muted); margin-top: 9px; line-height: 1.45; }
+  .hero-figs figcaption b { color: #d4e2f6; }
+  .hero-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 22px 0 0; }
+  .hero-cta { font-size: 13px; color: var(--accent); font-weight: 600; }
+  .hero-caveat { font-size: 11.5px; color: #6f7f96; max-width: 640px; line-height: 1.5; }
+  @media (max-width: 860px) {
+    .hero-datasets, .hero-exps, .hero-figs { grid-template-columns: 1fr; }
+  }
   .app { display: grid; grid-template-columns: minmax(520px, 1fr) 390px; height: 100vh; }
   .stage { position: relative; min-width: 0; display: flex; flex-direction: column; }
   header { padding: 16px 20px 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
@@ -77,6 +117,66 @@
 </style>
 </head>
 <body>
+<section class="hero">
+  <div class="hero-inner">
+    <span class="kicker">Connectome harmonics · computational neuroscience</span>
+    <h1 class="hero-title">Brain activity rides the connectome's harmonics — and LSD bends which ones</h1>
+    <p class="hero-thesis">Three reproducible experiments on real human neuroimaging. We turn the brain's structural wiring into a graph, take the eigenmodes of its Laplacian (the connectome's <em>harmonics</em>), project resting-state fMRI onto them, and ask what changes under a psychedelic. Every result below is interactive.</p>
+
+    <div class="hero-datasets">
+      <div class="ds"><span class="ds-k">Structural connectome</span><span class="ds-v">HCP-YA group average · Schaefer-400 parcellation</span></div>
+      <div class="ds"><span class="ds-k">Functional data</span><span class="ds-v">OpenNeuro ds003059 · 12 subjects · LSD vs placebo rest</span></div>
+      <div class="ds"><span class="ds-k">Cortical geometry</span><span class="ds-v">fsLR-32k surface eigenmodes (LaPy) · NSBLab</span></div>
+    </div>
+
+    <div class="hero-exps">
+      <div class="exp">
+        <span class="exp-tag">Experiment 1</span>
+        <div class="exp-q">Does LSD reorganize the harmonic spectrum?</div>
+        <p class="exp-m"><b>Method:</b> project ds003059 BOLD onto the HCP connectome harmonics (parcellated, CHAP-style) and compare power per mode, LSD vs placebo.</p>
+        <p class="exp-r"><span class="res-k">Yes.</span> Low-frequency harmonics lose power under LSD — the direction reported by Atasoy 2017.
+          <span class="pills"><span class="pill">low-band LSD/placebo ≈ 0.77</span><span class="pill">high-band ≈ 0.85</span></span>
+        </p>
+      </div>
+      <div class="exp">
+        <span class="exp-tag">Experiment 2</span>
+        <div class="exp-q">Is there a geometric “latent space” in the brain?</div>
+        <p class="exp-m"><b>Method:</b> use the lowest harmonics as coordinate axes (a Laplacian eigenmap) and embed all 400 regions — no functional labels given to the algorithm.</p>
+        <p class="exp-r"><span class="res-k">Yes.</span> The seven Yeo networks fall into a continuous layout that emerges from connectivity alone.
+          <span class="pills"><span class="pill">Default-mode ↔ Visual along mode 1</span><span class="pill">unsupervised</span></span>
+        </p>
+      </div>
+      <div class="exp">
+        <span class="exp-tag">Experiment 3</span>
+        <div class="exp-q">Shape vs wiring — and does LSD move the winner?</div>
+        <p class="exp-m"><b>Method:</b> reconstruct BOLD from the first N vectors of three bases (connectome, cortical geometry, distance rule); <b>within-subject paired test</b> of the geometric−connectome advantage, LSD vs placebo.</p>
+        <p class="exp-r"><span class="res-k">A tie at rest — but LSD shifts it toward geometry.</span> The geometric basis reliably gains on the connectome under LSD.
+          <span class="pills"><span class="pill sig">ΔAUC +0.006</span><span class="pill sig">paired t(11)=4.60</span><span class="pill sig">p=0.0008</span><span class="pill sig">d_z=1.33</span><span class="pill sig">12/12 subjects</span></span>
+        </p>
+      </div>
+    </div>
+
+    <div class="hero-bottomline">
+      <b>Bottom line:</b> under LSD the harmonic repertoire reorganizes — less low-frequency, wiring-bound structure and a measurable drift toward smooth cortical-<em>shape</em> patterns. The psychedelic shift is a <b>within-subject effect significant at p&lt;0.001</b> across all 12 subjects.
+    </div>
+
+    <div class="hero-figs">
+      <figure>
+        <img src="lsd_results/lsd_harmonic_spectra.png" alt="LSD vs placebo connectome-harmonic power spectra, 12 subjects" loading="lazy" />
+        <figcaption><b>Experiment 1.</b> Harmonic power vs spatial frequency, LSD vs placebo (n=12). Low-frequency modes are suppressed under LSD.</figcaption>
+      </figure>
+      <figure>
+        <img src="lsd_results/basis_comparison.png" alt="Reconstruction accuracy of connectome, geometric and EDR bases, with per-subject paired shift" loading="lazy" />
+        <figcaption><b>Experiment 3.</b> Reconstruction accuracy for each basis (left/middle) and the per-subject paired shift of the geometric−connectome advantage (right): nearly every subject rises toward geometry under LSD.</figcaption>
+      </figure>
+    </div>
+
+    <div class="hero-foot">
+      <span class="hero-cta">↓ Scroll to run the simulator, explore the latent space, and inspect every result live</span>
+      <span class="hero-caveat">Group-average, parcellated (400 regions) research/education artifacts — not individual or clinical data, and not medical advice. The 400-region resolution is exactly where the geometry-vs-wiring gap is weakest, so Exp. 3 tests the LSD <em>shift</em>, not the broader debate (cf. Mansour 2024).</span>
+    </div>
+  </div>
+</section>
 <div class="app">
   <main class="stage">
     <header>
