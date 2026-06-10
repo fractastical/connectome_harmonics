@@ -69,8 +69,9 @@ python3 -m venv .venv
 | `connectome_harmonics_data_hcp.json` | HCP-YA group-average Schaefer-400 SC harmonics |
 | `build_connectome_data.py` | Download HCP SC → compute Laplacian modes → JSON |
 | `analyze_lsd_harmonics.py` | OpenNeuro ds003059 → harmonic power spectra |
+| `compare_bases.py` | Geometry vs connectivity reconstruction (Pang 2023, parcellated) |
 | `chap_compat.py` | CHAP-compatible harmonic projection math |
-| `lsd_results/` | Precomputed LSD vs placebo spectra (demo) |
+| `lsd_results/` | Precomputed LSD spectra + basis comparison |
 | `.github/workflows/pages.yml` | GitHub Pages deploy on push to `main` |
 
 ---
@@ -145,6 +146,29 @@ For publication-faithful vertex-level harmonics, use the full [CHAP Docker pipel
 
 ---
 
+## Geometry vs connectivity (`compare_bases.py`)
+
+A parcellated reproduction of [Pang et al. 2023](https://www.nature.com/articles/s41586-023-06098-1) ("Geometric constraints on human brain function"), run on the ds003059 cohort so it can also ask a question the paper did not: **does the best basis shift on LSD?**
+
+It reconstructs the BOLD from the first *N* vectors of three Schaefer-400 bases and measures accuracy vs *N*:
+
+- **connectome** — graph-Laplacian eigenmodes of HCP structural connectivity
+- **geometric** — Laplace–Beltrami modes of the fsLR-32k cortical surface ([LaPy](https://github.com/Deep-MI/LaPy)), parcel-averaged
+- **EDR** — exponential-distance-rule surrogate from parcel centroids
+
+```bash
+.venv-lsd/bin/pip install -r requirements-lsd.txt   # adds lapy
+.venv-lsd/bin/python compare_bases.py               # reuses cached ds003059 BOLD
+```
+
+Outputs: `lsd_results/basis_comparison.json` + `.png` (rendered as the interactive "Geometry vs connectivity" card).
+
+**Result (12 subjects, Schaefer-400):** all three bases are close (a coarse-parcellation tie); the distance-only **EDR** basis has the best area-under-curve in both conditions — geometry does at least as well as wiring. Novel angle: the geometric−connectome gap shifts **+0.006 toward geometry under LSD** (enough to flip their ranking), suggesting activity drifts toward smoother geometric patterns on a psychedelic.
+
+> ⚠️ Parcellated resolution is exactly where the geometric advantage is *weakest*, and geometric modes here are hemisphere-separable. This illustrates the method and the LSD question; it does **not** settle the geometry-vs-connectivity debate (cf. [Mansour et al. 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1)). The decisive test needs vertex-resolution surfaces and a carefully built connectome.
+
+---
+
 ## Deploy (GitHub Pages)
 
 **Target:** `fractastical/connectome_harmonics` → https://fractastical.github.io/connectome_harmonics/
@@ -171,7 +195,10 @@ A mirror exists at [cimcai/connectome_harmonics](https://github.com/cimcai/conne
 | [Sanchez et al. 2020](https://www.sciencedirect.com/science/article/pii/S1053811920308508) | Robustness of harmonics to connectivity changes |
 | [Vohryzek et al. 2024](https://www.nature.com/articles/s42003-024-06669-6) | Integrative / segregative / degenerate harmonics |
 | [Carhart-Harris et al. 2020](https://openneuro.org/datasets/ds003059) | LSD fMRI dataset (OpenNeuro ds003059) |
+| [Pang et al. 2023](https://www.nature.com/articles/s41586-023-06098-1) | Geometric constraints on brain function (geometry vs connectome) |
+| [Mansour et al. 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1) | Rebuttal — connectome construction drives the comparison |
 | [CHAP](https://github.com/HopkinsPsychedelic/connectome_harmonic_core) | Full vertex-level connectome harmonic pipeline |
+| [NSBLab/BrainEigenmodes](https://github.com/NSBLab/BrainEigenmodes) | Pang 2023 surfaces, parcellations, eigenmode tools |
 
 ---
 

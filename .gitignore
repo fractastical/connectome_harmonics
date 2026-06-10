@@ -2,6 +2,9 @@
 .cache/
 nilearn_cache/
 __pycache__/
+.venv-lsd/
 lsd_results/*
 !lsd_results/lsd_harmonic_spectra.json
 !lsd_results/lsd_harmonic_spectra.png
+!lsd_results/basis_comparison.json
+!lsd_results/basis_comparison.png

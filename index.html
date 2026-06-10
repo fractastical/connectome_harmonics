@@ -191,6 +191,26 @@
     </div>
 
     <div class="card">
+      <h2>Geometry vs connectivity</h2>
+      <p class="small">Is brain activity shaped more by the connectome's <em>wiring</em> or by the cortex's <em>shape</em>? Following <a href="https://www.nature.com/articles/s41586-023-06098-1" target="_blank" rel="noopener">Pang et al. 2023</a>, we reconstruct the ds003059 fMRI from the first N vectors of three Schaefer-400 bases and measure accuracy vs N: <span style="color:#c9a0ff;">connectome</span> (wiring), <span style="color:#7CE0B0;">geometric</span> (cortical shape, Laplace–Beltrami modes), and <span style="color:#ffd18e;">EDR</span> (a distance-only surrogate).</p>
+      <div id="basisWrap" style="display:none;margin-top:8px;">
+        <canvas id="basisChart" style="width:100%;height:230px;display:block;"></canvas>
+        <div class="legend" style="justify-content:flex-start;gap:14px;margin-top:6px;">
+          <span class="small" style="color:#c9a0ff;">— connectome</span>
+          <span class="small" style="color:#7CE0B0;">— geometric</span>
+          <span class="small" style="color:#ffd18e;">— EDR</span>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <button id="basisCondition">condition: placebo</button>
+        </div>
+        <p class="small" id="basisCaption" style="margin-top:8px;color:#9fb0c6;"></p>
+        <div class="lsd-callout small" id="basisFinding" style="margin-top:8px;"></div>
+        <p class="small" style="margin-top:6px;color:#6f7f96;">Caveat: parcellated (400 regions) — the regime where the geometric advantage is <em>weakest</em>; geometric modes are hemisphere-separable while connectome/EDR are whole-brain. Illustrative, not significance-tested. The vertex-level debate is open (cf. <a href="https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1" target="_blank" rel="noopener">Mansour et al. 2024</a>).</p>
+      </div>
+      <img id="basisPlot" src="lsd_results/basis_comparison.png" alt="Reconstruction accuracy: connectome vs geometric vs EDR" style="width:100%;margin-top:10px;border-radius:12px;display:none;" />
+    </div>
+
+    <div class="card">
       <h2>References</h2>
       <ul class="refs">
         <li><a href="https://www.nature.com/articles/ncomms10340" target="_blank" rel="noopener">Atasoy et al. 2016</a> — Connectome-specific harmonic waves (foundational theory).</li>
@@ -280,6 +300,10 @@ const NETWORK_FULL = {
 };
 let latentColorMode = 'network'; // 'network' | 'hemi' | 'mode'
 let latentGeom = null;
+
+let BASIS = null;               // parsed basis_comparison.json
+let basisCond = 'placebo';      // 'placebo' | 'lsd'
+const BASIS_COLORS = { connectome:'#c9a0ff', geometric:'#7CE0B0', edr:'#ffd18e' };
 
 function rand(){ rngState = (1664525 * rngState + 1013904223) >>> 0; return rngState / 4294967296; }
 
@@ -513,6 +537,72 @@ function drawLsdChart(){
 
   lsdChartGeom = { ml, mr, pw, n };
 }
+
+function drawBasisChart(){
+  const cv = document.getElementById('basisChart');
+  if(!cv || !BASIS) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = cv.getBoundingClientRect();
+  const W = Math.max(1, Math.floor(rect.width*dpr)), H = Math.max(1, Math.floor(rect.height*dpr));
+  if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
+  const g = cv.getContext('2d'); g.clearRect(0,0,W,H);
+  const ml=34*dpr, mr=10*dpr, mt=10*dpr, mb=24*dpr, pw=W-ml-mr, ph=H-mt-mb;
+  const grid = BASIS.n_modes_grid;
+  const lx0 = Math.log(grid[0]), lx1 = Math.log(grid[grid.length-1]);
+  const px = m => ml + (Math.log(m)-lx0)/(lx1-lx0)*pw;
+  const py = a => mt + ph - a*ph;            // accuracy 0..1
+  // gridlines
+  g.strokeStyle='rgba(255,255,255,0.06)'; g.lineWidth=1*dpr; g.fillStyle='#6f7f96'; g.font=`${9.5*dpr}px ui-monospace, monospace`;
+  for(const a of [0,0.25,0.5,0.75,1]){ g.beginPath(); g.moveTo(ml,py(a)); g.lineTo(ml+pw,py(a)); g.stroke(); g.fillText(a.toFixed(2), 4*dpr, py(a)+3*dpr); }
+  for(const m of [1,10,100]){ if(m<grid[0]||m>grid[grid.length-1]) continue; g.fillText(''+m, px(m)-4*dpr, H-6*dpr); }
+  g.fillText('number of modes →', ml, mt+10*dpr);
+  const curves = BASIS.curves[basisCond];
+  for(const name of ['connectome','geometric','edr']){
+    const c = curves[name];
+    g.strokeStyle = BASIS_COLORS[name]; g.lineWidth=2*dpr; g.beginPath();
+    for(let i=0;i<grid.length;i++){ const x=px(grid[i]), y=py(c[i]); if(i===0) g.moveTo(x,y); else g.lineTo(x,y); }
+    g.stroke();
+    for(let i=0;i<grid.length;i++){ g.beginPath(); g.arc(px(grid[i]),py(c[i]),2.2*dpr,0,2*Math.PI); g.fillStyle=BASIS_COLORS[name]; g.fill(); }
+  }
+}
+
+function updateBasisText(){
+  if(!BASIS) return;
+  const cap = document.getElementById('basisCaption');
+  const find = document.getElementById('basisFinding');
+  const auc = BASIS.summary.auc;
+  const fmtRank = cond => BASIS.summary.ranking[cond].map(b => `${b} (${auc[cond][b].toFixed(3)})`).join(' &gt; ');
+  if(cap){
+    cap.innerHTML = `Best→worst by area under the accuracy curve — <strong>placebo:</strong> ${fmtRank('placebo')}; <strong>LSD:</strong> ${fmtRank('lsd')}. All three are close (a coarse-parcellation tie), with the distance-only <span style="color:#ffd18e;">EDR</span> basis best overall — geometry does at least as well as wiring.`;
+  }
+  if(find){
+    const gap = BASIS.summary.geometric_minus_connectome_auc;
+    const delta = gap.delta_lsd_minus_placebo;
+    const dir = delta > 0 ? 'gains on' : 'loses to';
+    find.innerHTML = `<strong>Novel angle — does the winner change on LSD?</strong> The geometric−connectome gap shifts by ${delta>=0?'+':''}${delta.toFixed(3)} from placebo to LSD, so the geometric (shape) basis <strong>${dir}</strong> the connectome (wiring) basis under LSD${BASIS.summary.ranking.lsd.indexOf('geometric') < BASIS.summary.ranking.placebo.indexOf('geometric') ? ' — enough to flip their ranking' : ''}. Suggestive (n=${BASIS.meta.n_subjects}, not significance-tested): under a psychedelic, activity drifts toward smoother geometric patterns and away from specific wiring.`;
+  }
+}
+
+async function loadBasisComparison(){
+  try {
+    const res = await fetch('lsd_results/basis_comparison.json');
+    if(!res.ok) return;
+    BASIS = await res.json();
+    document.getElementById('basisWrap').style.display = 'block';
+    const btn = document.getElementById('basisCondition');
+    if(btn && !btn.dataset.wired){
+      btn.dataset.wired='1';
+      btn.addEventListener('click', () => {
+        basisCond = basisCond==='placebo' ? 'lsd' : 'placebo';
+        btn.textContent = 'condition: ' + basisCond;
+        drawBasisChart();
+      });
+    }
+    drawBasisChart();
+    updateBasisText();
+  } catch(_) {}
+}
+window.addEventListener('resize', () => { if(BASIS) drawBasisChart(); });
 
 function hasNetworks(){ return !!(DATA && DATA.networks && DATA.networks.length === N); }
 
@@ -865,6 +955,7 @@ window.addEventListener('resize', () => { if (LSD) drawLsdChart(); });
 
 boot();
 loadLsdResults();
+loadBasisComparison();
 </script>
 </body>
 </html>
