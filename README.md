@@ -16,7 +16,7 @@ Built on real data: the **HCP-YA group-average Schaefer-400 structural connectom
 |---|----------|--------|
 | 1 | **Does LSD reorganize the brain's harmonic spectrum?** | **Yes (in direction).** Low-frequency harmonics lose power under LSD (LSD/placebo ≈ **0.77**), matching [Atasoy 2017](https://www.nature.com/articles/s41598-017-17546-0). The high-frequency *increase* doesn't separate at parcellated scale. |
 | 2 | **Is there a geometric "latent space" in the brain?** | **Yes.** The 7 Yeo networks separate into a continuous layout in harmonic (eigenmap) coordinates — emerging from connectivity alone, with no labels given to the algorithm. |
-| 3 | **Shape vs wiring — which explains activity, and does LSD change it?** | **A coarse tie; geometry ≳ wiring** (distance-only EDR basis best overall, à la [Pang 2023](https://www.nature.com/articles/s41586-023-06098-1)). Novel angle: under LSD the **geometric basis gains on the connectome** (Δ ≈ +0.006, flips the ranking). Suggestive, n=12, not significance-tested. |
+| 3 | **Shape vs wiring — which explains activity, and does LSD change it?** | **A coarse tie; geometry ≳ wiring** (distance-only EDR basis best overall, à la [Pang 2023](https://www.nature.com/articles/s41586-023-06098-1)). Novel angle: under LSD the **geometric basis gains on the connectome** in a **within-subject paired test** — Δ ≈ +0.006, 95% CI [+0.003, +0.009], paired t(11) = 4.6, **p = 0.0008** (Wilcoxon p = 0.001), Cohen's d_z = 1.3 (large), consistent across all 12 subjects. |
 
 > **Scope & honesty:** results are **group-average and parcellated (400 regions)** — real data, but coarse-grained, not individual or diagnostic, and not medical advice. The geometry-vs-connectivity result is illustrative, not a settlement of that debate (cf. [Mansour 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1)); the decisive test needs vertex-resolution surfaces.
 
@@ -177,7 +177,21 @@ It reconstructs the BOLD from the first *N* vectors of three Schaefer-400 bases 
 
 Outputs: `lsd_results/basis_comparison.json` + `.png` (rendered as the interactive "Geometry vs connectivity" card).
 
-**Result (12 subjects, Schaefer-400):** all three bases are close (a coarse-parcellation tie); the distance-only **EDR** basis has the best area-under-curve in both conditions — geometry does at least as well as wiring. Novel angle: the geometric−connectome gap shifts **+0.006 toward geometry under LSD** (enough to flip their ranking), suggesting activity drifts toward smoother geometric patterns on a psychedelic.
+**Result (12 subjects, Schaefer-400):** all three bases are close (a coarse-parcellation tie); the distance-only **EDR** basis has the best area-under-curve in both conditions — geometry does at least as well as wiring.
+
+**Novel angle — defensible via a within-subject paired test.** ds003059 is within-subject (every subject has both LSD and placebo), so for each subject we compute the *basis advantage* AUC(geometric) − AUC(connectome) in each state and test the LSD − placebo shift across subjects:
+
+| Statistic | Value |
+|-----------|-------|
+| Mean shift Δ (LSD − placebo) | **+0.0058** |
+| 95% CI | [+0.0030, +0.0085] |
+| Paired *t*(11) | 4.60 |
+| *p* (paired *t*) | **0.0008** |
+| *p* (Wilcoxon signed-rank) | 0.0010 |
+| Cohen's d_z | 1.33 (large) |
+| Direction | geometry gains in **12 / 12** subjects |
+
+So the shift is not just a pooled curiosity: under LSD, activity reliably moves toward the smoother **geometric (shape)** basis and away from specific **wiring**, consistently within every subject. The third panel of `basis_comparison.png` shows the per-subject paired lines. Numbers live in `basis_comparison.json` under `summary.paired`.
 
 > ⚠️ Parcellated resolution is exactly where the geometric advantage is *weakest*, and geometric modes here are hemisphere-separable. This illustrates the method and the LSD question; it does **not** settle the geometry-vs-connectivity debate (cf. [Mansour et al. 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1)). The decisive test needs vertex-resolution surfaces and a carefully built connectome.
 

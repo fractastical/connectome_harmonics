@@ -201,6 +201,59 @@ def build_grid(n_max: int) -> list[int]:
     return sorted({min(n, n_max) for n in raw if n <= n_max})
 
 
+def auc(grid: list[int], curve: list[float]) -> float:
+    """Normalized area under the reconstruction-accuracy curve (mean accuracy)."""
+    x, y = np.asarray(grid, float), np.asarray(curve, float)
+    area = np.sum((x[1:] - x[:-1]) * (y[1:] + y[:-1]) / 2.0)
+    return float(area / (x[-1] - x[0]))
+
+
+def paired_stats(a: list[float], b: list[float]) -> dict:
+    """Paired comparison of a vs b (e.g. per-subject gap under LSD vs placebo).
+
+    Returns mean difference (a-b), 95% CI, paired t-test, Wilcoxon signed-rank,
+    and Cohen's d_z. All across the subject dimension.
+    """
+    from scipy import stats
+
+    a = np.asarray(a, float)
+    b = np.asarray(b, float)
+    d = a - b
+    n = int(d.size)
+    out = {
+        "n": n,
+        "mean_a": float(a.mean()) if n else float("nan"),
+        "mean_b": float(b.mean()) if n else float("nan"),
+        "mean_diff": float(d.mean()) if n else float("nan"),
+    }
+    if n < 2:
+        out.update(
+            sd_diff=float("nan"), ci95=[float("nan"), float("nan")],
+            t=float("nan"), p_ttest=float("nan"),
+            w=float("nan"), p_wilcoxon=float("nan"), cohen_dz=float("nan"),
+        )
+        return out
+    sd = float(d.std(ddof=1))
+    se = sd / np.sqrt(n)
+    tcrit = float(stats.t.ppf(0.975, n - 1))
+    t_res = stats.ttest_rel(a, b)
+    try:
+        w_res = stats.wilcoxon(a, b)
+        w_stat, w_p = float(w_res.statistic), float(w_res.pvalue)
+    except ValueError:  # all-zero differences
+        w_stat, w_p = float("nan"), float("nan")
+    out.update(
+        sd_diff=sd,
+        ci95=[out["mean_diff"] - tcrit * se, out["mean_diff"] + tcrit * se],
+        t=float(t_res.statistic),
+        p_ttest=float(t_res.pvalue),
+        w=w_stat,
+        p_wilcoxon=w_p,
+        cohen_dz=(out["mean_diff"] / sd) if sd > 0 else float("nan"),
+    )
+    return out
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--modes", type=int, default=200, help="Max modes per basis")
@@ -225,25 +278,46 @@ def main() -> None:
         "edr": edr_basis(n_modes, args.edr_length),
     }
 
-    print(f"Extracting parcel BOLD for {len(subjects)} subjects …")
-    masker = fetch_schaefer_masker()
-    Y = {cond: parcel_maps(subjects, cond, masker) for cond in ("lsd", "placebo")}
-
     grid = build_grid(n_modes)
-    curves = {cond: {} for cond in Y}
-    for cond, Yc in Y.items():
+    conds = ("lsd", "placebo")
+
+    print(f"Extracting per-subject parcel BOLD for {len(subjects)} subjects …")
+    masker = fetch_schaefer_masker()
+    # Per-subject, per-condition maps (z-scored per run inside parcel_maps).
+    subj_maps: dict[str, dict[str, np.ndarray | None]] = {}
+    for sub in subjects:
+        subj_maps[sub] = {}
+        for cond in conds:
+            try:
+                arr = parcel_maps([sub], cond, masker)
+            except Exception as exc:  # noqa: BLE001 - skip a missing/broken run
+                print(f"  ! {sub} {cond}: {exc}")
+                arr = None
+            subj_maps[sub][cond] = arr
+
+    paired_subjects = [
+        s for s in subjects
+        if subj_maps[s]["lsd"] is not None and subj_maps[s]["placebo"] is not None
+    ]
+
+    # Pooled per condition (drives the headline curves / chart) — unchanged metric.
+    Y = {
+        cond: np.concatenate(
+            [subj_maps[s][cond] for s in subjects if subj_maps[s][cond] is not None],
+            axis=1,
+        )
+        for cond in conds
+    }
+
+    curves = {cond: {} for cond in conds}
+    for cond in conds:
         for name, basis in bases.items():
-            curves[cond][name] = reconstruction_curve(basis, Yc, grid)
+            curves[cond][name] = reconstruction_curve(basis, Y[cond], grid)
             print(f"  {cond:8s} {name:11s} acc@{grid[-1]}modes={curves[cond][name][-1]:.3f}")
 
-    def auc(curve):
-        x, y = np.asarray(grid, float), np.asarray(curve, float)
-        area = np.sum((x[1:] - x[:-1]) * (y[1:] + y[:-1]) / 2.0)
-        return float(area / (x[-1] - x[0]))
-
     summary = {"auc": {}, "modes_to_0.5": {}, "ranking": {}}
-    for cond in Y:
-        summary["auc"][cond] = {k: auc(curves[cond][k]) for k in bases}
+    for cond in conds:
+        summary["auc"][cond] = {k: auc(grid, curves[cond][k]) for k in bases}
         summary["modes_to_0.5"][cond] = {
             k: modes_to_threshold(grid, curves[cond][k], 0.5) for k in bases
         }
@@ -253,17 +327,49 @@ def main() -> None:
 
     geo_gap = {
         cond: summary["auc"][cond]["geometric"] - summary["auc"][cond]["connectome"]
-        for cond in Y
+        for cond in conds
     }
     summary["geometric_minus_connectome_auc"] = {
         **geo_gap,
         "delta_lsd_minus_placebo": geo_gap["lsd"] - geo_gap["placebo"],
     }
+
+    # ---- Per-subject paired test (the defensible version of the shift) --------
+    print(f"Per-subject AUC for paired test ({len(paired_subjects)} subjects) …")
+    per_auc = {cond: {name: [] for name in bases} for cond in conds}
+    for s in paired_subjects:
+        for cond in conds:
+            for name, basis in bases.items():
+                c = reconstruction_curve(basis, subj_maps[s][cond], grid)
+                per_auc[cond][name].append(auc(grid, c))
+
+    gap_lsd = [
+        g - c for g, c in zip(per_auc["lsd"]["geometric"], per_auc["lsd"]["connectome"])
+    ]
+    gap_plcb = [
+        g - c
+        for g, c in zip(per_auc["placebo"]["geometric"], per_auc["placebo"]["connectome"])
+    ]
+    zeros = [0.0] * len(paired_subjects)
+    summary["paired"] = {
+        "metric": "per-subject AUC(geometric) - AUC(connectome)",
+        "n_subjects": len(paired_subjects),
+        "subjects": paired_subjects,
+        "per_subject": {"gap_lsd": gap_lsd, "gap_placebo": gap_plcb},
+        # Does the geometric advantage change between states? (the headline)
+        "lsd_minus_placebo_shift": paired_stats(gap_lsd, gap_plcb),
+        # Within each state, does geometric differ from connectome? (gap vs 0)
+        "geometric_vs_connectome_lsd": paired_stats(gap_lsd, zeros),
+        "geometric_vs_connectome_placebo": paired_stats(gap_plcb, zeros),
+    }
+
     summary["interpretation"] = (
         "Higher = better reconstruction with fewer modes. 'ranking' lists bases "
-        "best→worst by area under the accuracy curve. If the ranking or the "
-        "geometric−connectome gap differs between LSD and placebo, the psychedelic "
-        "state changes which structural basis best describes brain activity."
+        "best→worst by area under the accuracy curve. The pooled "
+        "geometric−connectome gap is suggestive; 'paired' reports the defensible "
+        "within-subject test: per subject we take AUC(geometric)−AUC(connectome) "
+        "for LSD and placebo and test the LSD−placebo shift across subjects "
+        "(paired t + Wilcoxon, with Cohen's d_z and 95% CI)."
     )
 
     payload = {
@@ -295,14 +401,27 @@ def main() -> None:
     print("Ranking LSD:    ", summary["ranking"]["lsd"])
     print("Ranking placebo:", summary["ranking"]["placebo"])
     print("geo−conn gap:   ", summary["geometric_minus_connectome_auc"])
+    sh = summary["paired"]["lsd_minus_placebo_shift"]
+    print(
+        f"PAIRED shift (LSD−placebo, n={sh['n']}): "
+        f"Δ={sh['mean_diff']:+.4f} 95%CI[{sh['ci95'][0]:+.4f},{sh['ci95'][1]:+.4f}] "
+        f"t={sh['t']:.2f} p={sh['p_ttest']:.4f} "
+        f"Wilcoxon p={sh['p_wilcoxon']:.4f} d_z={sh['cohen_dz']:.2f}"
+    )
 
 
 def plot_results(payload: dict, out_png: Path) -> None:
     grid = payload["n_modes_grid"]
     colors = {"connectome": "#c9a0ff", "geometric": "#7CE0B0", "edr": "#ffd18e"}
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), sharey=True)
+    paired = payload.get("summary", {}).get("paired")
+
+    fig = plt.figure(figsize=(15.5, 4.6))
     fig.patch.set_facecolor("#0b0e14")
-    for ax, cond in zip(axes, ("placebo", "lsd")):
+    ax0 = fig.add_subplot(1, 3, 1)
+    ax1 = fig.add_subplot(1, 3, 2, sharey=ax0)
+    ax2 = fig.add_subplot(1, 3, 3)
+
+    for ax, cond in zip((ax0, ax1), ("placebo", "lsd")):
         ax.set_facecolor("#0b0e14")
         for name, c in colors.items():
             ax.plot(grid, payload["curves"][cond][name], color=c, lw=2, marker="o", ms=3, label=name)
@@ -312,8 +431,41 @@ def plot_results(payload: dict, out_png: Path) -> None:
         ax.tick_params(colors="#9fb0c8")
         for spine in ax.spines.values():
             spine.set_color("#333")
-    axes[0].set_ylabel("reconstruction accuracy (r)")
-    axes[1].legend(facecolor="#111722", edgecolor="#333", labelcolor="white")
+    ax0.set_ylabel("reconstruction accuracy (r)")
+    ax1.legend(facecolor="#111722", edgecolor="#333", labelcolor="white")
+
+    # Third panel: per-subject paired shift of the geometric−connectome gap.
+    ax2.set_facecolor("#0b0e14")
+    for spine in ax2.spines.values():
+        spine.set_color("#333")
+    ax2.tick_params(colors="#9fb0c8")
+    if paired and paired.get("per_subject"):
+        gp = paired["per_subject"]["gap_placebo"]
+        gl = paired["per_subject"]["gap_lsd"]
+        sh = paired["lsd_minus_placebo_shift"]
+        x = [0, 1]
+        for a, b in zip(gp, gl):
+            color = "#7CE0B0" if b > a else "#ff9a9a"
+            ax2.plot(x, [a, b], color=color, lw=1, alpha=0.55,
+                     marker="o", ms=3, mfc=color, mec="none")
+        ax2.plot(x, [float(np.mean(gp)), float(np.mean(gl))],
+                 color="white", lw=2.5, marker="o", ms=6, zorder=5, label="mean")
+        ax2.axhline(0, color="#555", lw=1, ls="--")
+        ax2.set_xlim(-0.35, 1.35)
+        ax2.set_xticks(x)
+        ax2.set_xticklabels(["placebo", "LSD"])
+        ax2.set_ylabel("AUC(geometric) − AUC(connectome)")
+        p = sh["p_ttest"]
+        ax2.set_title(
+            f"paired shift  Δ={sh['mean_diff']:+.3f}\n"
+            f"t={sh['t']:.2f}, p={p:.3f}, d_z={sh['cohen_dz']:.2f}  (n={sh['n']})",
+            color="white", fontsize=10,
+        )
+        ax2.legend(facecolor="#111722", edgecolor="#333", labelcolor="white", loc="best")
+    else:
+        ax2.text(0.5, 0.5, "no paired data", color="#9fb0c8",
+                 ha="center", va="center", transform=ax2.transAxes)
+
     plt.tight_layout()
     out_png.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_png, dpi=150, facecolor=fig.get_facecolor())

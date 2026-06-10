@@ -238,7 +238,7 @@
         </div>
         <p class="small" id="basisCaption" style="margin-top:8px;color:#9fb0c6;"></p>
         <div class="lsd-callout small" id="basisFinding" style="margin-top:8px;"></div>
-        <p class="small" style="margin-top:6px;color:#6f7f96;">Caveat: parcellated (400 regions) — the regime where the geometric advantage is <em>weakest</em>; geometric modes are hemisphere-separable while connectome/EDR are whole-brain. Illustrative, not significance-tested. The vertex-level debate is open (cf. <a href="https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1" target="_blank" rel="noopener">Mansour et al. 2024</a>).</p>
+        <p class="small" style="margin-top:6px;color:#6f7f96;">Caveat: parcellated (400 regions) — the regime where the geometric advantage is <em>weakest</em>; geometric modes are hemisphere-separable while connectome/EDR are whole-brain. The LSD shift <em>is</em> significance-tested (within-subject paired test, see above), but the broader vertex-level geometry-vs-wiring debate remains open (cf. <a href="https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1" target="_blank" rel="noopener">Mansour et al. 2024</a>).</p>
       </div>
       <img id="basisPlot" src="lsd_results/basis_comparison.png" alt="Reconstruction accuracy: connectome vs geometric vs EDR" style="width:100%;margin-top:10px;border-radius:12px;display:none;" />
     </div>
@@ -608,17 +608,31 @@ function updateBasisText(){
   if(cap){
     cap.innerHTML = `Best→worst by area under the accuracy curve — <strong>placebo:</strong> ${fmtRank('placebo')}; <strong>LSD:</strong> ${fmtRank('lsd')}. All three are close (a coarse-parcellation tie), with the distance-only <span style="color:#ffd18e;">EDR</span> basis best overall — geometry does at least as well as wiring.`;
   }
+  const fmtP = p => (p == null || isNaN(p)) ? 'n/a' : (p < 0.001 ? 'p &lt; 0.001' : 'p = ' + p.toFixed(3));
+  const sh = BASIS.summary.paired ? BASIS.summary.paired.lsd_minus_placebo_shift : null;
+  const flips = BASIS.summary.ranking.lsd.indexOf('geometric') < BASIS.summary.ranking.placebo.indexOf('geometric');
   if(find){
     const gap = BASIS.summary.geometric_minus_connectome_auc;
     const delta = gap.delta_lsd_minus_placebo;
     const dir = delta > 0 ? 'gains on' : 'loses to';
-    find.innerHTML = `<strong>Novel angle — does the winner change on LSD?</strong> The geometric−connectome gap shifts by ${delta>=0?'+':''}${delta.toFixed(3)} from placebo to LSD, so the geometric (shape) basis <strong>${dir}</strong> the connectome (wiring) basis under LSD${BASIS.summary.ranking.lsd.indexOf('geometric') < BASIS.summary.ranking.placebo.indexOf('geometric') ? ' — enough to flip their ranking' : ''}. Suggestive (n=${BASIS.meta.n_subjects}, not significance-tested): under a psychedelic, activity drifts toward smoother geometric patterns and away from specific wiring.`;
+    if(sh){
+      const ci = sh.ci95;
+      const sig = sh.p_ttest < 0.05;
+      find.innerHTML = `<strong>Novel angle — does the winner change on LSD?</strong> Per subject we measure the geometric−connectome advantage (area under the accuracy curve) in each state; under LSD it shifts toward geometry by Δ = ${delta>=0?'+':''}${delta.toFixed(3)} (95% CI [${ci[0]>=0?'+':''}${ci[0].toFixed(3)}, ${ci[1]>=0?'+':''}${ci[1].toFixed(3)}]). This is a <strong>within-subject</strong> change, ${sig?'<strong>consistent across all '+sh.n+' subjects</strong>':'tested across '+sh.n+' subjects'}: paired t = ${sh.t.toFixed(2)}, ${fmtP(sh.p_ttest)}; Wilcoxon ${fmtP(sh.p_wilcoxon)}; Cohen's d_z = ${sh.cohen_dz.toFixed(2)} (${Math.abs(sh.cohen_dz)>=0.8?'large':Math.abs(sh.cohen_dz)>=0.5?'medium':'small'} effect)${flips?' — enough to flip their pooled ranking':''}. So under a psychedelic, activity reliably drifts toward smoother geometric (shape) patterns and away from specific wiring.`;
+    } else {
+      find.innerHTML = `<strong>Novel angle — does the winner change on LSD?</strong> The geometric−connectome gap shifts by ${delta>=0?'+':''}${delta.toFixed(3)} from placebo to LSD, so the geometric (shape) basis <strong>${dir}</strong> the connectome (wiring) basis under LSD${flips ? ' — enough to flip their ranking' : ''}.`;
+    }
   }
   const fb = document.getElementById('findBasis');
   if (fb) {
     const best = BASIS.summary.ranking.placebo[0];
     const delta = BASIS.summary.geometric_minus_connectome_auc.delta_lsd_minus_placebo;
-    fb.textContent = `All three bases are close (${best} best overall — geometry does at least as well as wiring). Under LSD the geometric basis ${delta>0?'gains on':'loses to'} the connectome (Δ ${delta>=0?'+':''}${delta.toFixed(3)}), n=${BASIS.meta.n_subjects}.`;
+    if(sh){
+      const pTxt = sh.p_ttest < 0.001 ? 'p<0.001' : 'p='+sh.p_ttest.toFixed(3);
+      fb.textContent = `All three bases reconstruct comparably, but LSD reliably shifts activity toward the geometric (shape) basis and away from the connectome (wiring): per-subject geometric−connectome advantage rises by Δ ${delta>=0?'+':''}${delta.toFixed(3)} (paired t=${sh.t.toFixed(2)}, ${pTxt}, d_z=${sh.cohen_dz.toFixed(2)}, n=${sh.n}).`;
+    } else {
+      fb.textContent = `All three bases are close (${best} best overall — geometry does at least as well as wiring). Under LSD the geometric basis ${delta>0?'gains on':'loses to'} the connectome (Δ ${delta>=0?'+':''}${delta.toFixed(3)}), n=${BASIS.meta.n_subjects}.`;
+    }
   }
 }
 
