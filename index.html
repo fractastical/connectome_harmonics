@@ -59,6 +59,19 @@
   @media (max-width: 860px) {
     .hero-datasets, .hero-exps, .hero-figs { grid-template-columns: 1fr; }
   }
+
+  /* ---- Glossary tooltips ---------------------------------------------- */
+  .term { border-bottom: 1px dotted rgba(142,197,255,.6); cursor: help; }
+  .term:hover, .term:focus-visible { color: #eaf2ff; outline: none; }
+  #tooltip { position: fixed; z-index: 9999; max-width: 300px; background: #0d1420; color: #e8eef9;
+    border: 1px solid rgba(142,197,255,.32); border-radius: 10px; padding: 9px 11px; font-size: 12.5px;
+    line-height: 1.5; box-shadow: 0 12px 32px rgba(0,0,0,.5); pointer-events: none; display: none;
+    opacity: 0; transform: translateY(4px); transition: opacity .12s ease, transform .12s ease; }
+  #tooltip.show { opacity: 1; transform: translateY(0); }
+  #tooltip:after { content: ''; position: absolute; left: var(--arrow-x, 50%); width: 0; height: 0;
+    margin-left: -6px; border: 6px solid transparent; }
+  #tooltip[data-placement="top"]:after { top: 100%; border-top-color: #0d1420; }
+  #tooltip[data-placement="bottom"]:after { bottom: 100%; border-bottom-color: #0d1420; }
   .app { display: grid; grid-template-columns: minmax(520px, 1fr) 390px; height: 100vh; }
   .stage { position: relative; min-width: 0; display: flex; flex-direction: column; }
   header { padding: 16px 20px 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
@@ -121,19 +134,19 @@
   <div class="hero-inner">
     <span class="kicker">Connectome harmonics · computational neuroscience</span>
     <h1 class="hero-title">Brain activity rides the connectome's harmonics — and LSD bends which ones</h1>
-    <p class="hero-thesis">Three reproducible experiments on real human neuroimaging. We turn the brain's structural wiring into a graph, take the eigenmodes of its Laplacian (the connectome's <em>harmonics</em>), project resting-state fMRI onto them, and ask what changes under a psychedelic. Every result below is interactive.</p>
+    <p class="hero-thesis">Three reproducible experiments on real human neuroimaging. We turn the brain's structural wiring into a graph, take the eigenmodes of its <span class="term" tabindex="0" data-tip="A matrix built from the connectivity graph. Its eigenvectors are the network's harmonics; its eigenvalues give each one a spatial frequency.">graph Laplacian</span> (the connectome's <span class="term" tabindex="0" data-tip="Eigenmodes of the connectome's graph Laplacian — spatial standing-wave patterns the network supports, from smooth (low frequency) to fine (high frequency).">harmonics</span>), project resting-state <span class="term" tabindex="0" data-tip="BOLD = blood-oxygen-level-dependent signal: the fMRI measurement used as a proxy for local brain activity.">fMRI</span> onto them, and ask what changes under a psychedelic. Every result below is interactive.</p>
 
     <div class="hero-datasets">
-      <div class="ds"><span class="ds-k">Structural connectome</span><span class="ds-v">HCP-YA group average · Schaefer-400 parcellation</span></div>
+      <div class="ds"><span class="ds-k">Structural connectome</span><span class="ds-v">HCP-YA group average · <span class="term" tabindex="0" data-tip="Cortex divided into 400 regions (parcels). We analyze one activity value per region instead of per voxel or vertex.">Schaefer-400</span> parcellation</span></div>
       <div class="ds"><span class="ds-k">Functional data</span><span class="ds-v">OpenNeuro ds003059 · 12 subjects · LSD vs placebo rest</span></div>
-      <div class="ds"><span class="ds-k">Cortical geometry</span><span class="ds-v">fsLR-32k surface eigenmodes (LaPy) · NSBLab</span></div>
+      <div class="ds"><span class="ds-k">Cortical geometry</span><span class="ds-v"><span class="term" tabindex="0" data-tip="A standard cortical surface mesh (~32k vertices per hemisphere) used to compute geometric (shape) eigenmodes.">fsLR-32k</span> surface eigenmodes (LaPy) · NSBLab</span></div>
     </div>
 
     <div class="hero-exps">
       <div class="exp">
         <span class="exp-tag">Experiment 1</span>
         <div class="exp-q">Does LSD reorganize the harmonic spectrum?</div>
-        <p class="exp-m"><b>Method:</b> project ds003059 BOLD onto the HCP connectome harmonics (parcellated, CHAP-style) and compare power per mode, LSD vs placebo.</p>
+        <p class="exp-m"><b>Method:</b> project ds003059 <span class="term" tabindex="0" data-tip="BOLD = blood-oxygen-level-dependent signal: the fMRI measurement used as a proxy for local brain activity. Each frame is one value per region.">BOLD</span> onto the HCP connectome harmonics (parcellated, <span class="term" tabindex="0" data-tip="Connectome Harmonic Analysis Pipeline — the vertex-level method for computing and projecting connectome harmonics. We run a parcellated approximation of it.">CHAP</span>-style) and compare power per mode, LSD vs placebo.</p>
         <p class="exp-r"><span class="res-k">Yes.</span> Low-frequency harmonics lose power under LSD — the direction reported by Atasoy 2017.
           <span class="pills"><span class="pill">low-band LSD/placebo ≈ 0.77</span><span class="pill">high-band ≈ 0.85</span></span>
         </p>
@@ -141,7 +154,7 @@
       <div class="exp">
         <span class="exp-tag">Experiment 2</span>
         <div class="exp-q">Is there a geometric “latent space” in the brain?</div>
-        <p class="exp-m"><b>Method:</b> use the lowest harmonics as coordinate axes (a Laplacian eigenmap) and embed all 400 regions — no functional labels given to the algorithm.</p>
+        <p class="exp-m"><b>Method:</b> use the lowest harmonics as coordinate axes (a <span class="term" tabindex="0" data-tip="Laplacian eigenmap: using the lowest eigenmodes as coordinate axes, placing each region in a low-dimensional space where strongly-connected regions sit close together.">Laplacian eigenmap</span>) and embed all 400 regions — no functional labels given to the algorithm.</p>
         <p class="exp-r"><span class="res-k">Yes.</span> The seven Yeo networks fall into a continuous layout that emerges from connectivity alone.
           <span class="pills"><span class="pill">Default-mode ↔ Visual along mode 1</span><span class="pill">unsupervised</span></span>
         </p>
@@ -149,9 +162,9 @@
       <div class="exp">
         <span class="exp-tag">Experiment 3</span>
         <div class="exp-q">Shape vs wiring — and does LSD move the winner?</div>
-        <p class="exp-m"><b>Method:</b> reconstruct BOLD from the first N vectors of three bases (connectome, cortical geometry, distance rule); <b>within-subject paired test</b> of the geometric−connectome advantage, LSD vs placebo.</p>
+        <p class="exp-m"><b>Method:</b> <span class="term" tabindex="0" data-tip="Reconstruct = approximate each fMRI activity pattern as a weighted sum of the first N modes of a basis, then score how close it is to the original (correlation). Fewer modes for the same accuracy = a more natural basis.">reconstruct</span> BOLD from the first N vectors of three bases (connectome, cortical geometry, <span class="term" tabindex="0" data-tip="Exponential Distance Rule: a surrogate connectome where connection strength falls off exponentially with the distance between regions — geometry without real wiring.">distance rule</span>); <b><span class="term" tabindex="0" data-tip="A within-subject comparison: every subject contributes both LSD and placebo, so we test each subject's own LSD−placebo difference, controlling for individual differences.">paired test</span></b> of the geometric−connectome advantage, LSD vs placebo.</p>
         <p class="exp-r"><span class="res-k">A tie at rest — but LSD shifts it toward geometry.</span> The geometric basis reliably gains on the connectome under LSD.
-          <span class="pills"><span class="pill sig">ΔAUC +0.006</span><span class="pill sig">paired t(11)=4.60</span><span class="pill sig">p=0.0008</span><span class="pill sig">d_z=1.33</span><span class="pill sig">12/12 subjects</span></span>
+          <span class="pills"><span class="pill sig"><span class="term" tabindex="0" data-tip="Δ in the area under the reconstruction-accuracy curve (AUC summarizes how efficiently a basis recreates the data across mode counts). Positive = geometry gained on the connectome under LSD.">ΔAUC</span> +0.006</span><span class="pill sig">paired t(11)=4.60</span><span class="pill sig">p=0.0008</span><span class="pill sig"><span class="term" tabindex="0" data-tip="Cohen's d_z: standardized effect size for a paired test (mean difference ÷ its SD across subjects). 1.33 is a large effect.">d_z=1.33</span></span><span class="pill sig">12/12 subjects</span></span>
         </p>
       </div>
     </div>
@@ -325,7 +338,7 @@
 
     <div class="card" id="card-basis" style="order:3">
       <h2>Geometry vs connectivity</h2>
-      <p class="small">Is brain activity shaped more by the connectome's <em>wiring</em> or by the cortex's <em>shape</em>? Following <a href="https://www.nature.com/articles/s41586-023-06098-1" target="_blank" rel="noopener">Pang et al. 2023</a>, we reconstruct the ds003059 fMRI from the first N vectors of three Schaefer-400 bases and measure accuracy vs N: <span style="color:#c9a0ff;">connectome</span> (wiring), <span style="color:#7CE0B0;">geometric</span> (cortical shape, Laplace–Beltrami modes), and <span style="color:#ffd18e;">EDR</span> (a distance-only surrogate).</p>
+      <p class="small">Is brain activity shaped more by the connectome's <em>wiring</em> or by the cortex's <em>shape</em>? Following <a href="https://www.nature.com/articles/s41586-023-06098-1" target="_blank" rel="noopener">Pang et al. 2023</a>, we <span class="term" tabindex="0" data-tip="Reconstruct = approximate each fMRI frame (one value per region) as a weighted sum of the first N modes of a basis, then score it against the original by correlation. A basis that reaches high accuracy with fewer modes is a more natural description of the activity.">reconstruct</span> the ds003059 <span class="term" tabindex="0" data-tip="BOLD = blood-oxygen-level-dependent signal: the fMRI measurement used as a proxy for local brain activity.">fMRI</span> from the first N vectors of three Schaefer-400 bases and measure accuracy vs N: <span style="color:#c9a0ff;">connectome</span> (wiring), <span style="color:#7CE0B0;">geometric</span> (cortical shape, Laplace–Beltrami modes), and <span style="color:#ffd18e;">EDR</span> (a distance-only surrogate).</p>
       <div id="basisWrap" style="display:none;margin-top:8px;">
         <canvas id="basisChart" style="width:100%;height:230px;display:block;"></canvas>
         <div class="legend" style="justify-content:flex-start;gap:14px;margin-top:6px;">
@@ -1123,6 +1136,44 @@ window.addEventListener('resize', () => { if (LSD) drawLsdChart(); });
 boot();
 loadLsdResults();
 loadBasisComparison();
+
+// ---- Glossary tooltips (hover + keyboard focus) --------------------------
+(function(){
+  const tip = document.createElement('div');
+  tip.id = 'tooltip';
+  tip.setAttribute('role', 'tooltip');
+  document.body.appendChild(tip);
+  let current = null;
+  function place(el){
+    const txt = el.getAttribute('data-tip');
+    if (!txt) return;
+    current = el;
+    tip.textContent = txt;
+    tip.style.display = 'block';
+    const r = el.getBoundingClientRect();
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = r.left + r.width / 2 - tw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+    let top = r.top - th - 10, placement = 'top';
+    if (top < 8) { top = r.bottom + 10; placement = 'bottom'; }
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    tip.dataset.placement = placement;
+    tip.style.setProperty('--arrow-x', (r.left + r.width / 2 - left) + 'px');
+    requestAnimationFrame(() => tip.classList.add('show'));
+  }
+  function hide(){
+    current = null;
+    tip.classList.remove('show');
+    setTimeout(() => { if (!current) tip.style.display = 'none'; }, 160);
+  }
+  document.addEventListener('mouseover', e => { const el = e.target.closest('[data-tip]'); if (el) place(el); });
+  document.addEventListener('mouseout', e => { const el = e.target.closest('[data-tip]'); if (el && el === current) hide(); });
+  document.addEventListener('focusin', e => { const el = e.target.closest('[data-tip]'); if (el) place(el); });
+  document.addEventListener('focusout', e => { const el = e.target.closest('[data-tip]'); if (el && el === current) hide(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); });
+  window.addEventListener('scroll', () => { if (current) hide(); }, true);
+})();
 </script>
 </body>
 </html>
