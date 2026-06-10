@@ -1,6 +1,9 @@
-numpy>=1.24
-scipy>=1.10
-matplotlib>=3.7
-nibabel>=5.0
-nilearn>=0.10
-lapy>=1.0
+# LSD + geometry-vs-connectivity analysis:
+#   analyze_lsd_harmonics.py, compare_bases.py
+# Pinned to the versions used to generate the published results.
+numpy==2.4.6
+scipy==1.17.1
+matplotlib==3.10.9
+nibabel==5.4.2
+nilearn==0.13.1
+lapy==1.6.0

@@ -1,2 +1,4 @@
-numpy>=1.24
-scipy>=1.10
+# Core: build_connectome_data.py, connectome_harmonics_sim.py
+# Pinned to the versions used to generate the published results.
+numpy==2.4.6
+scipy==1.17.1

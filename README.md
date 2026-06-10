@@ -218,10 +218,20 @@ A mirror exists at [cimcai/connectome_harmonics](https://github.com/cimcai/conne
 
 ## Requirements
 
+Dependency versions are **pinned** (`==`) to the exact versions used to generate the published results, for reproducibility.
+
 | File | Packages |
 |------|----------|
-| `requirements.txt` | numpy, scipy, matplotlib — sim + data builder |
-| `requirements-lsd.txt` | above + nibabel, nilearn — LSD analysis |
+| `requirements.txt` | `numpy==2.4.6`, `scipy==1.17.1` — sim + data builder |
+| `requirements-lsd.txt` | above + `matplotlib==3.10.9`, `nibabel==5.4.2`, `nilearn==0.13.1`, `lapy==1.6.0` — LSD + geometry analysis |
+
+---
+
+## License & versioning
+
+- **Code:** [MIT](LICENSE). Reuse, modify, and redistribute freely with attribution.
+- **Data:** the MIT license covers source code only. Datasets and assets downloaded at runtime (HCP, OpenNeuro ds003059, Schaefer/Yeo parcellations, NSBLab surfaces) retain their own licenses — see the note in [`LICENSE`](LICENSE) and comply with each source before redistributing derived data.
+- **Releases:** tagged with [semantic versioning](https://semver.org/) (e.g. `v0.1.0`). Cite a specific tag for a stable reference to the exact code state behind a result.
 
 ---
 

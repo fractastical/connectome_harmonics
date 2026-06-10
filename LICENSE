@@ -1,0 +1,39 @@
+MIT License
+
+Copyright (c) 2026 Joel Dietz and Connectome Harmonics contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+NOTE ON DATA AND THIRD-PARTY ASSETS
+
+This MIT license covers the source code in this repository. It does NOT relicense
+third-party data or assets that the scripts download at runtime, which retain
+their own licenses and terms, including but not limited to:
+
+  - HCP-YA structural connectivity (via GNN_SC_FC / Human Connectome Project);
+    HCP data use terms apply.
+  - OpenNeuro ds003059 (Carhart-Harris et al. LSD fMRI); see the dataset license.
+  - Schaefer 2018 parcellation and Yeo networks (ThomasYeoLab / CBIG).
+  - fsLR-32k surfaces, parcellations, and eigenmode tooling (NSBLab/BrainEigenmodes).
+
+Please consult and comply with each source's license before redistributing
+derived data. Results in this repository are educational/research artifacts and
+are group-average, parcellated, and not individual or clinical data.
