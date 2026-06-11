@@ -1,0 +1,54 @@
+{
+  "title": "Brain activity rides the connectome's harmonics, and psychedelics bend which ones: a parcellated reanalysis of LSD and psilocybin fMRI",
+  "upload_type": "publication",
+  "publication_type": "preprint",
+  "access_right": "open",
+  "license": "cc-by-4.0",
+  "language": "eng",
+  "creators": [
+    {
+      "name": "Dietz, Joel",
+      "affiliation": "California Institute of Machine Consciousness"
+    },
+    {
+      "name": "Connectome Harmonics contributors",
+      "affiliation": "California Institute of Machine Consciousness"
+    }
+  ],
+  "description": "Connectome harmonics \u2014 the eigenmodes of the graph Laplacian of the human structural connectome \u2014 provide a frequency-ordered basis for brain activity. We combine a group-average HCP Schaefer-400 structural connectome with two independent within-subject psychedelic fMRI datasets (LSD: OpenNeuro ds003059, n=12; psilocybin: OpenNeuro ds006072, n=7). (1) Low-frequency harmonics lose power under LSD (low-band LSD/placebo power ratio ~0.77), reproducing the direction of Atasoy et al. (2017). (2) Using the lowest harmonics as coordinate axes, the seven Yeo functional networks separate into a continuous, unsupervised layout that emerges from connectivity alone. (3) Reconstructing the BOLD signal from connectome, cortical-geometry (Laplace-Beltrami), and exponential-distance-rule bases, all three are close at 400-region scale, but under LSD the geometric basis reliably gains on the connectome in a within-subject paired test (\u0394AUC=+0.0058, 95% CI [+0.0030,+0.0085], paired t(11)=4.60, p=0.0008; exact sign-flip permutation p=0.001; Cohen's d_z=1.33; 12/12 subjects), surviving global-signal regression and frame censoring (p=0.002, permutation p=0.003). This shift replicates in direction in an independent psilocybin-versus-active-placebo cohort (\u0394AUC=+0.010, d_z=0.87; permutation and Wilcoxon p=0.031; t-test p=0.061). We interpret these results as evidence that psychedelics shift cortical activity toward smoother, shape-aligned spatial patterns and away from specific wiring, while emphasizing the coarse, parcellated resolution and modest sample sizes. All code, data-fetching scripts, and an interactive web demonstration are openly available. NOTE: The paper text/figures are released under CC-BY-4.0; the accompanying source code is released under the MIT License. Underlying datasets (HCP, OpenNeuro ds003059, ds006072, Schaefer/Yeo, NSBLab) retain their own licenses.",
+  "keywords": [
+    "connectome harmonics",
+    "graph Laplacian eigenmodes",
+    "psychedelics",
+    "LSD",
+    "psilocybin",
+    "cortical geometry",
+    "Laplace-Beltrami eigenmodes",
+    "functional connectivity",
+    "fMRI",
+    "computational neuroscience"
+  ],
+  "related_identifiers": [
+    {
+      "relation": "isSupplementTo",
+      "identifier": "https://github.com/fractastical/connectome_harmonics",
+      "scheme": "url"
+    },
+    {
+      "relation": "references",
+      "identifier": "10.1038/s41598-017-17546-0",
+      "scheme": "doi"
+    },
+    {
+      "relation": "references",
+      "identifier": "10.1038/s41586-023-06098-1",
+      "scheme": "doi"
+    },
+    {
+      "relation": "references",
+      "identifier": "10.18112/openneuro.ds003059.v1.0.0",
+      "scheme": "doi"
+    }
+  ],
+  "notes": "Sponsored by the California Institute of Machine Consciousness. Reanalysis of public OpenNeuro data; group-average and parcellated results, not individual or clinical findings, and not medical advice."
+}
