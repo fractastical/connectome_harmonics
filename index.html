@@ -31,7 +31,7 @@
   .hero-title { font-size: clamp(26px, 4vw, 40px); line-height: 1.12; font-weight: 800; margin: 16px 0 0; letter-spacing: -.01em;
     background: linear-gradient(92deg, #eaf2ff 0%, #c9a0ff 60%, #8ec5ff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .hero-thesis { color: #c2d0e6; font-size: 15.5px; line-height: 1.6; max-width: 860px; margin: 14px 0 0; }
-  .hero-datasets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 26px 0 0; }
+  .hero-datasets { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 26px 0 0; }
   .ds { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09); border-radius: 14px; padding: 13px 14px; }
   .ds-k { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
   .ds-v { display: block; font-size: 13.5px; color: #eaf1fc; margin-top: 5px; line-height: 1.4; font-weight: 600; }
@@ -48,7 +48,7 @@
   .pill.sig { color: #bff0d4; background: rgba(124,224,176,.12); border-color: rgba(124,224,176,.34); }
   .hero-bottomline { margin: 18px 0 0; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(201,160,255,.34); background: linear-gradient(92deg, rgba(201,160,255,.12), rgba(142,197,255,.06)); font-size: 14.5px; line-height: 1.55; color: #f1eaff; }
   .hero-bottomline b { color: #fff; }
-  .hero-figs { margin: 22px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .hero-figs { margin: 22px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
   .hero-figs figure { margin: 0; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.09); border-radius: 16px; padding: 12px; }
   .hero-figs img { width: 100%; display: block; border-radius: 10px; }
   .hero-figs figcaption { font-size: 12px; color: var(--muted); margin-top: 9px; line-height: 1.45; }
@@ -139,6 +139,7 @@
     <div class="hero-datasets">
       <div class="ds"><span class="ds-k">Structural connectome</span><span class="ds-v">HCP-YA group average · <span class="term" tabindex="0" data-tip="Cortex divided into 400 regions (parcels). We analyze one activity value per region instead of per voxel or vertex.">Schaefer-400</span> parcellation</span></div>
       <div class="ds"><span class="ds-k">Functional data</span><span class="ds-v">OpenNeuro ds003059 · 12 subjects · LSD vs placebo rest</span></div>
+      <div class="ds"><span class="ds-k">Replication cohort</span><span class="ds-v">OpenNeuro ds006072 · 7 subjects · psilocybin vs active placebo</span></div>
       <div class="ds"><span class="ds-k">Cortical geometry</span><span class="ds-v"><span class="term" tabindex="0" data-tip="A standard cortical surface mesh (~32k vertices per hemisphere) used to compute geometric (shape) eigenmodes.">fsLR-32k</span> surface eigenmodes (LaPy) · NSBLab</span></div>
     </div>
 
@@ -166,11 +167,14 @@
         <p class="exp-r"><span class="res-k">A tie at rest — but LSD shifts it toward geometry.</span> The geometric basis reliably gains on the connectome under LSD.
           <span class="pills"><span class="pill sig"><span class="term" tabindex="0" data-tip="Δ in the area under the reconstruction-accuracy curve (AUC summarizes how efficiently a basis recreates the data across mode counts). Positive = geometry gained on the connectome under LSD.">ΔAUC</span> +0.006</span><span class="pill sig">paired t(11)=4.60</span><span class="pill sig">p=0.0008</span><span class="pill sig"><span class="term" tabindex="0" data-tip="Cohen's d_z: standardized effect size for a paired test (mean difference ÷ its SD across subjects). 1.33 is a large effect.">d_z=1.33</span></span><span class="pill sig">12/12 subjects</span><span class="pill sig"><span class="term" tabindex="0" data-tip="Re-run after global-signal regression + detrend + DVARS frame censoring, and tested with an exact within-subject sign-flip permutation null. The shift attenuates (Δ+0.004) but stays significant (p=0.002, perm p=0.003) — so it is not purely a global-signal/motion artifact.">holds after GSR + permutation</span></span></span>
         </p>
+        <p class="exp-r" style="margin-top:8px;"><span class="res-k">Replicates in psilocybin.</span> An independent cohort (<span class="term" tabindex="0" data-tip="OpenNeuro ds006072 (Siegel 2025): within-subject psilocybin 25 mg vs active placebo methylphenidate 40 mg, fsLR surface CIFTI parcellated to Schaefer-400. A different drug, scanner, and pipeline than ds003059.">ds006072</span>, n=7) shows the same geometry-gains direction.
+          <span class="pills"><span class="pill sig">ΔAUC +0.010</span><span class="pill sig">perm p=0.031</span><span class="pill sig">Wilcoxon p=0.031</span><span class="pill sig">d_z=0.87</span><span class="pill"><span class="term" tabindex="0" data-tip="The parametric paired t-test is borderline (p=0.061) and the effect drops just below threshold under aggressive global-signal regression (perm p=0.063). With n=7 against an active stimulant placebo the design is low-powered; the converging direction across two psychedelics is the result.">t p=0.061 · marginal after GSR</span></span></span>
+        </p>
       </div>
     </div>
 
     <div class="hero-bottomline">
-      <b>Bottom line:</b> under LSD the harmonic repertoire reorganizes — less low-frequency, wiring-bound structure and a measurable drift toward smooth cortical-<em>shape</em> patterns. The psychedelic shift is a <b>within-subject effect significant at p&lt;0.001</b> across all 12 subjects, and it <b>survives nuisance regression</b> (global-signal + detrend + motion-proxy censoring) and an exact permutation null — so it is not merely a motion or global-signal artifact. It remains a coarse, parcellated result on one cohort.
+      <b>Bottom line:</b> under LSD the harmonic repertoire reorganizes — less low-frequency, wiring-bound structure and a measurable drift toward smooth cortical-<em>shape</em> patterns. The psychedelic shift is a <b>within-subject effect significant at p&lt;0.001</b> across all 12 subjects, and it <b>survives nuisance regression</b> (global-signal + detrend + motion-proxy censoring) and an exact permutation null — so it is not merely a motion or global-signal artifact. It then <b>replicates in direction in an independent psilocybin cohort</b> (ds006072, n=7: same geometry-gains shift, d_z=0.87, exact-permutation p=0.031) — a different drug, scanner, and pipeline. It remains a coarse, parcellated result, and the psilocybin replication is underpowered (n=7, active placebo).
     </div>
 
     <div class="hero-figs">
@@ -181,6 +185,10 @@
       <figure>
         <img src="lsd_results/basis_comparison.png" alt="Reconstruction accuracy of connectome, geometric and EDR bases, with per-subject paired shift" loading="lazy" />
         <figcaption><b>Experiment 3.</b> Reconstruction accuracy for each basis (left/middle) and the per-subject paired shift of the geometric−connectome advantage (right): nearly every subject rises toward geometry under LSD.</figcaption>
+      </figure>
+      <figure>
+        <img src="lsd_results/psilocybin_replication.png" alt="Psilocybin vs methylphenidate reconstruction accuracy and per-subject paired shift" loading="lazy" />
+        <figcaption><b>Replication (psilocybin, ds006072, n=7).</b> Same per-subject paired test on an independent drug/scanner/pipeline. Activity again shifts toward geometry under psilocybin vs active placebo (Δ=+0.010, d_z=0.87, exact-permutation p=0.031; marginal after GSR).</figcaption>
       </figure>
     </div>
 
@@ -211,7 +219,7 @@
   <aside class="sidebar">
     <div class="card findings" style="order:1">
       <h2>What this demonstrates</h2>
-      <p class="small">An interactive study of <strong>connectome harmonics</strong> on real human data — the HCP group-average structural connectome plus a 12-subject LSD fMRI cohort (<a href="https://openneuro.org/datasets/ds003059" target="_blank" rel="noopener">OpenNeuro ds003059</a>). Three questions are tested, each with a result you can inspect below:</p>
+      <p class="small">An interactive study of <strong>connectome harmonics</strong> on real human data — the HCP group-average structural connectome, a 12-subject LSD fMRI cohort (<a href="https://openneuro.org/datasets/ds003059" target="_blank" rel="noopener">OpenNeuro ds003059</a>), and an independent 7-subject psilocybin cohort for replication (<a href="https://openneuro.org/datasets/ds006072" target="_blank" rel="noopener">OpenNeuro ds006072</a>). Three questions are tested, each with a result you can inspect below:</p>
       <ol class="findings-list">
         <li>
           <span class="q">1. Does LSD reorganize the brain's harmonic spectrum?</span>
@@ -351,7 +359,7 @@
         </div>
         <p class="small" id="basisCaption" style="margin-top:8px;color:#9fb0c6;"></p>
         <div class="lsd-callout small" id="basisFinding" style="margin-top:8px;"></div>
-        <p class="small" style="margin-top:6px;color:#6f7f96;">Caveat: parcellated (400 regions) — the regime where the geometric advantage is <em>weakest</em>; geometric modes are hemisphere-separable while connectome/EDR are whole-brain. The LSD shift <em>is</em> significance-tested (within-subject paired test + exact sign-flip permutation) and <em>survives</em> nuisance regression (GSR + detrend + DVARS censoring), so it is not merely a motion/global-signal artifact. Remaining limits: no fmriprep motion parameters on this raw dataset, single cohort (n=12), and the broader vertex-level geometry-vs-wiring debate stays open (cf. <a href="https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1" target="_blank" rel="noopener">Mansour et al. 2024</a>).</p>
+        <p class="small" style="margin-top:6px;color:#6f7f96;">Caveat: parcellated (400 regions) — the regime where the geometric advantage is <em>weakest</em>; geometric modes are hemisphere-separable while connectome/EDR are whole-brain. The LSD shift <em>is</em> significance-tested (within-subject paired test + exact sign-flip permutation), <em>survives</em> nuisance regression (GSR + detrend + DVARS censoring), and <em>replicates in direction</em> on an independent psilocybin cohort (<a href="https://openneuro.org/datasets/ds006072" target="_blank" rel="noopener">ds006072</a>, n=7: Δ=+0.010, d_z=0.87, exact-permutation p=0.031; marginal after GSR) — so it is not merely a motion/global-signal artifact or a single-dataset fluke. Remaining limits: no fmriprep motion parameters on the LSD raw dataset, modest cohorts (n=12 LSD, n=7 psilocybin with an active placebo), and the broader vertex-level geometry-vs-wiring debate stays open (cf. <a href="https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1" target="_blank" rel="noopener">Mansour et al. 2024</a>).</p>
       </div>
       <img id="basisPlot" src="lsd_results/basis_comparison.png" alt="Reconstruction accuracy: connectome vs geometric vs EDR" style="width:100%;margin-top:10px;border-radius:12px;display:none;" />
     </div>
@@ -364,10 +372,11 @@
         <li><a href="https://www.sciencedirect.com/science/article/pii/S1053811920308508" target="_blank" rel="noopener">Sanchez et al. 2020</a> — Robustness of harmonics to connectivity changes.</li>
         <li><a href="https://www.nature.com/articles/s42003-024-06669-6" target="_blank" rel="noopener">Vohryzek et al. 2024</a> — Integrative, segregative, and degenerate harmonics.</li>
         <li><a href="https://openneuro.org/datasets/ds003059" target="_blank" rel="noopener">Carhart-Harris et al. 2020</a> — LSD fMRI dataset (OpenNeuro ds003059).</li>
+        <li><a href="https://openneuro.org/datasets/ds006072" target="_blank" rel="noopener">Siegel et al. 2025</a> — psilocybin precision-imaging dataset (OpenNeuro ds006072), replication cohort.</li>
       </ul>
     </div>
 
-    <p class="small" style="padding-bottom:12px;order:10;">Built on real data: the HCP-YA group-average Schaefer-400 structural connectome and the 12-subject LSD fMRI cohort from OpenNeuro ds003059. These are group-average, parcellated results for research and education — not individual or diagnostic measurements, and not medical advice. (The “toy synthetic graph” dataset is the only synthetic one.)</p>
+    <p class="small" style="padding-bottom:12px;order:10;">Built on real data: the HCP-YA group-average Schaefer-400 structural connectome, the 12-subject LSD fMRI cohort from OpenNeuro ds003059, and the 7-subject psilocybin replication cohort from OpenNeuro ds006072. These are group-average / parcellated results for research and education — not individual or diagnostic measurements, and not medical advice. (The “toy synthetic graph” dataset is the only synthetic one.)</p>
   </aside>
 </div>
 <script>

@@ -10,13 +10,14 @@ An interactive investigation of **connectome harmonics** — graph-Laplacian eig
 
 ## What this tests & what we found
 
-Built on real data: the **HCP-YA group-average Schaefer-400 structural connectome** and a **12-subject LSD fMRI cohort** ([OpenNeuro ds003059](https://openneuro.org/datasets/ds003059)). Three questions, three results — each reproducible with the scripts here and inspectable in the live demo's "What this demonstrates" panel.
+Built on real data: the **HCP-YA group-average Schaefer-400 structural connectome**, a **12-subject LSD fMRI cohort** ([OpenNeuro ds003059](https://openneuro.org/datasets/ds003059)), and an independent **7-subject psilocybin cohort** for replication ([OpenNeuro ds006072](https://openneuro.org/datasets/ds006072)). Each result is reproducible with the scripts here and inspectable in the live demo's "What this demonstrates" panel.
 
 | # | Question | Result |
 |---|----------|--------|
 | 1 | **Does LSD reorganize the brain's harmonic spectrum?** | **Yes (in direction).** Low-frequency harmonics lose power under LSD (LSD/placebo ≈ **0.77**), matching [Atasoy 2017](https://www.nature.com/articles/s41598-017-17546-0). The high-frequency *increase* doesn't separate at parcellated scale. |
 | 2 | **Is there a geometric "latent space" in the brain?** | **Yes.** The 7 Yeo networks separate into a continuous layout in harmonic (eigenmap) coordinates — emerging from connectivity alone, with no labels given to the algorithm. |
 | 3 | **Shape vs wiring — which explains activity, and does LSD change it?** | **A coarse tie; geometry ≳ wiring** (distance-only EDR basis best overall, à la [Pang 2023](https://www.nature.com/articles/s41586-023-06098-1)). Novel angle: under LSD the **geometric basis gains on the connectome** in a **within-subject paired test** — Δ ≈ +0.006, 95% CI [+0.003, +0.009], paired t(11) = 4.6, **p = 0.0008** (Wilcoxon p = 0.001, exact permutation p = 0.001), Cohen's d_z = 1.3 (large), 12/12 subjects. **Survives nuisance regression** (GSR + detrend + DVARS censoring): attenuates to Δ ≈ +0.004 but stays significant (p = 0.002, perm p = 0.003) — not merely a motion/global-signal artifact. |
+| 3b | **Does that LSD shift replicate in an independent psychedelic dataset?** | **Yes, in direction; partial on significance.** A second, independent cohort — psilocybin vs active placebo (methylphenidate), [OpenNeuro ds006072](https://openneuro.org/datasets/ds006072), n = 7, fsLR-surface CIFTI → Schaefer-400 — shows the **same geometry-gains-under-drug direction**: Δ = +0.010, Cohen's d_z = 0.87 (large), **significant by exact sign-flip permutation and Wilcoxon (both p = 0.031)**, borderline by paired t (p = 0.061). Attenuates and drops below threshold under aggressive GSR (Δ = +0.006, perm p = 0.063). Different drug, different scanner, different preprocessing — so the converging direction is meaningful, even though n = 7 with an active placebo is underpowered. |
 
 > **Scope & honesty:** results are **group-average and parcellated (400 regions)** — real data, but coarse-grained, not individual or diagnostic, and not medical advice. The geometry-vs-connectivity result is illustrative, not a settlement of that debate (cf. [Mansour 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1)); the decisive test needs vertex-resolution surfaces.
 
@@ -84,6 +85,7 @@ python3 -m venv .venv
 | `build_connectome_data.py` | Download HCP SC → compute Laplacian modes → JSON |
 | `analyze_lsd_harmonics.py` | OpenNeuro ds003059 → harmonic power spectra |
 | `compare_bases.py` | Geometry vs connectivity reconstruction (Pang 2023, parcellated) |
+| `replicate_psilocybin.py` | Independent replication of the LSD shift on psilocybin (ds006072) |
 | `chap_compat.py` | CHAP-compatible harmonic projection math |
 | `lsd_results/` | Precomputed LSD spectra + basis comparison |
 | `.github/workflows/pages.yml` | GitHub Pages deploy on push to `main` |
@@ -206,6 +208,23 @@ Honest residual limits: no true (24-parameter) motion regression is possible wit
 
 > ⚠️ Parcellated resolution is exactly where the geometric advantage is *weakest*, and geometric modes here are hemisphere-separable. This illustrates the method and the LSD question; it does **not** settle the geometry-vs-connectivity debate (cf. [Mansour et al. 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1)). The decisive test needs vertex-resolution surfaces and a carefully built connectome.
 
+### Independent replication: psilocybin (`replicate_psilocybin.py`)
+
+The strongest check on the LSD shift is whether it appears in a **different psychedelic, cohort, scanner, and pipeline**. We reran the identical paired test on [OpenNeuro ds006072](https://openneuro.org/datasets/ds006072) (Siegel et al. 2025) — a within-subject **psilocybin (25 mg) vs active placebo (methylphenidate 40 mg)** precision-imaging trial. These are fsLR-32k surface CIFTI dtseries (bandpassed, noGSR), parcellated to Schaefer-400 and analyzed with the same bases and statistics.
+
+```bash
+.venv-lsd/bin/python replicate_psilocybin.py   # downloads CIFTIs (cached), parcellates, paired test
+```
+
+Outputs: `lsd_results/psilocybin_replication.json` + `.png`.
+
+| | Δ (PSIL − MTP) | paired *t* (p) | Wilcoxon *p* | permutation *p* | d_z |
+|---|---|---|---|---|---|
+| Raw | **+0.0103** | 2.30 (0.061) | **0.031** | **0.031** | 0.87 |
+| Nuisance-regressed (94% frames kept) | +0.0061 | 1.68 (0.145) | 0.078 | 0.063 | 0.63 |
+
+**Verdict — directional replication.** Psilocybin shifts reconstruction toward the **geometric** basis in the same direction as LSD, with a large effect (d_z = 0.87). On raw data the effect is **significant by the exact sign-flip permutation test and Wilcoxon (both p = 0.031)** — the appropriate nonparametric tests at this sample size — and borderline by the parametric *t*-test (p = 0.061). It attenuates and slips just below threshold under aggressive global-signal regression (perm p = 0.063), as the LSD effect also did. With **n = 7 against an active stimulant placebo**, the exact-permutation p-value floor is 2/128 ≈ 0.016, so the design is inherently low-powered; the converging *direction and effect size across two independent psychedelics* is the meaningful result, not a single p-value.
+
 ---
 
 ## Deploy (GitHub Pages)
@@ -234,6 +253,7 @@ A mirror exists at [cimcai/connectome_harmonics](https://github.com/cimcai/conne
 | [Sanchez et al. 2020](https://www.sciencedirect.com/science/article/pii/S1053811920308508) | Robustness of harmonics to connectivity changes |
 | [Vohryzek et al. 2024](https://www.nature.com/articles/s42003-024-06669-6) | Integrative / segregative / degenerate harmonics |
 | [Carhart-Harris et al. 2020](https://openneuro.org/datasets/ds003059) | LSD fMRI dataset (OpenNeuro ds003059) |
+| [Siegel et al. 2025](https://openneuro.org/datasets/ds006072) | Psilocybin precision-imaging dataset (OpenNeuro ds006072) — replication cohort |
 | [Pang et al. 2023](https://www.nature.com/articles/s41586-023-06098-1) | Geometric constraints on brain function (geometry vs connectome) |
 | [Mansour et al. 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1) | Rebuttal — connectome construction drives the comparison |
 | [CHAP](https://github.com/HopkinsPsychedelic/connectome_harmonic_core) | Full vertex-level connectome harmonic pipeline |

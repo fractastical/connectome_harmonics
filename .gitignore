@@ -8,3 +8,5 @@ lsd_results/*
 !lsd_results/lsd_harmonic_spectra.png
 !lsd_results/basis_comparison.json
 !lsd_results/basis_comparison.png
+!lsd_results/psilocybin_replication.json
+!lsd_results/psilocybin_replication.png
