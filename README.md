@@ -4,6 +4,8 @@ An interactive investigation of **connectome harmonics** — graph-Laplacian eig
 
 **Live demo:** https://fractastical.github.io/connectome_harmonics/
 
+**📄 Preprint (PDF):** [`paper/connectome_harmonics_psychedelics.pdf`](paper/connectome_harmonics_psychedelics.pdf) — arXiv-style write-up of the experiments, replication, and vertex-resolution check (LaTeX source in [`paper/`](paper/)).
+
 ![Harmonic mode animation](connectome_harmonics_preview.gif)
 
 ---
@@ -86,6 +88,7 @@ python3 -m venv .venv
 | `analyze_lsd_harmonics.py` | OpenNeuro ds003059 → harmonic power spectra |
 | `compare_bases.py` | Geometry vs connectivity reconstruction (Pang 2023, parcellated) |
 | `replicate_psilocybin.py` | Independent replication of the LSD shift on psilocybin (ds006072) |
+| `compare_bases_vertex.py` | Vertex-resolution (fsaverage5-10k) robustness check on psilocybin |
 | `chap_compat.py` | CHAP-compatible harmonic projection math |
 | `lsd_results/` | Precomputed LSD spectra + basis comparison |
 | `.github/workflows/pages.yml` | GitHub Pages deploy on push to `main` |
@@ -166,6 +169,16 @@ For publication-faithful vertex-level harmonics, use the full [CHAP Docker pipel
 
 A parcellated reproduction of [Pang et al. 2023](https://www.nature.com/articles/s41586-023-06098-1) ("Geometric constraints on human brain function"), run on the ds003059 cohort so it can also ask a question the paper did not: **does the best basis shift on LSD?**
 
+We compare three bases — and it matters not to conflate them:
+
+| Basis | Encodes | Built from |
+|---|---|---|
+| **connectome** (wiring) | the brain's real structural connections, incl. long-range tracts | graph Laplacian of the structural connectome |
+| **geometric** (shape) | smooth spatial patterns the cortical surface supports | Laplace–Beltrami modes of the cortical surface |
+| **EDR** (distance) | connectivity that decays purely with distance (`exp(−d/λ)`) — geometry-as-a-network, **not real wiring** | Laplacian of a distance-decay surrogate |
+
+So there are **two different contrasts**: **geometry − connectome** (shape vs *real wiring* — the headline) and **geometry − EDR** (shape vs *distance* — two flavours of geometry). A shift in the second is **not** a wiring result. The LSD/psilocybin "toward geometry, away from wiring" effect lives specifically in **geometry − connectome**.
+
 It reconstructs the BOLD from the first *N* vectors of three Schaefer-400 bases and measures accuracy vs *N*:
 
 - **connectome** — graph-Laplacian eigenmodes of HCP structural connectivity
@@ -224,6 +237,25 @@ Outputs: `lsd_results/psilocybin_replication.json` + `.png`.
 | Nuisance-regressed (94% frames kept) | +0.0061 | 1.68 (0.145) | 0.078 | 0.063 | 0.63 |
 
 **Verdict — directional replication.** Psilocybin shifts reconstruction toward the **geometric** basis in the same direction as LSD, with a large effect (d_z = 0.87). On raw data the effect is **significant by the exact sign-flip permutation test and Wilcoxon (both p = 0.031)** — the appropriate nonparametric tests at this sample size — and borderline by the parametric *t*-test (p = 0.061). It attenuates and slips just below threshold under aggressive global-signal regression (perm p = 0.063), as the LSD effect also did. With **n = 7 against an active stimulant placebo**, the exact-permutation p-value floor is 2/128 ≈ 0.016, so the design is inherently low-powered; the converging *direction and effect size across two independent psychedelics* is the meaningful result, not a single p-value.
+
+### Vertex-resolution robustness check (`compare_bases_vertex.py`)
+
+The single biggest limitation of the parcellated analysis is its 400-region resolution. We therefore repeated the reconstruction comparison at **vertex resolution** on the psilocybin cohort, in **fsaverage5 (10,242-vertex, left hemisphere)** — the resolution at which [Pang et al. 2023](https://www.nature.com/articles/s41586-023-06098-1) publish eigenbases. The fsLR-32k psilocybin BOLD is resampled to fsaverage5 with a pure-Python area-average resampler built from neuromaps' registration-fusion spheres (no Connectome Workbench required; validated against native LaPy modes, |r| 0.86–0.97 for the lowest modes).
+
+```bash
+.venv-lsd/bin/python compare_bases_vertex.py     # resamples to fsaverage5-10k, paired test
+```
+
+Outputs: `lsd_results/vertex_basis_comparison.json` + `.png`.
+
+**Two honest findings:**
+
+1. **The geometric basis reconstructs vertex BOLD well** (AUC ≈ 0.32–0.34), close to EDR (≈ 0.30–0.32) — so the method is not an artifact of parcellation; geometry is a genuinely efficient basis at fine resolution.
+2. **A fair geometry-vs-*wiring* test is not possible at vertex resolution with public data.** The only publicly available connectome modes are Pang's *synthetic* demo surrogate (degenerate spectrum, ~0 reconstruction), and the real tractography connectome modes are not released at vertex resolution. So the geometry-vs-wiring shift **necessarily stays a parcellated result.**
+
+What we *can* test at vertex resolution is **geometry vs EDR** (shape vs distance-only). Here the psilocybin shift is **small, significant, and opposite-signed** to the parcellated geometry-vs-connectome shift: Δ(geometric − EDR) = **−0.0067**, 95% CI [−0.011, −0.002], paired *t*(6) = −3.55 (p = 0.012), Wilcoxon/permutation p = 0.031, **d_z = −1.34**. In other words, the "toward geometry" effect is **specific to the geometry-vs-wiring contrast** and does **not** generalize to geometry-vs-distance at fine scale — among the two shape-like bases, the distance surrogate holds up slightly *better* under psilocybin. Overall reconstruction also drops modestly under psilocybin for both bases (more complex / less compressible activity). This is a real nuance, reported here rather than buried: the parcellated headline is about shape vs **specific wiring**, not a blanket claim that geometry wins more under psychedelics at every scale and contrast.
+
+> ⚠️ Vertex caveats: left hemisphere only; fsaverage5 (10k) not full fsLR-32k; **synthetic** connectome surrogate; cross-space resampling of the BOLD; psilocybin cohort only (ds003059 LSD is volumetric).
 
 ---
 

@@ -10,3 +10,5 @@ lsd_results/*
 !lsd_results/basis_comparison.png
 !lsd_results/psilocybin_replication.json
 !lsd_results/psilocybin_replication.png
+!lsd_results/vertex_basis_comparison.json
+!lsd_results/vertex_basis_comparison.png

@@ -62,7 +62,11 @@ regression and frame censoring ($p=0.002$, permutation $p=0.003$). We then
 cohort: the same direction and a large effect ($\Delta\mathrm{AUC}=+0.010$,
 $d_z=0.87$), significant by exact permutation and Wilcoxon tests ($p=0.031$),
 borderline parametrically ($t$-test $p=0.061$) and attenuating below threshold
-under aggressive denoising. We interpret these results as evidence that
+under aggressive denoising. A vertex-resolution check (fsaverage5-10k) confirms the
+geometric basis reconstructs activity efficiently off the parcellation, but shows
+that a fair geometry-versus-wiring test is not achievable at vertex resolution with
+public data and that the shift is specific to the geometry-vs-wiring contrast. We
+interpret these results as evidence that
 psychedelics shift cortical activity toward smoother, shape-aligned spatial
 patterns and away from specific wiring, while emphasizing the coarse,
 parcellated resolution and modest sample sizes. All code, data-fetching
@@ -155,6 +159,19 @@ under this accuracy-versus-$N$ curve (AUC) summarizes how efficiently a basis
 recreates the data: a more natural basis reaches high accuracy with fewer modes.
 For each subject and state we compute the \emph{basis advantage}
 $\mathrm{AUC}(\text{geometric})-\mathrm{AUC}(\text{connectome})$.
+
+\paragraph{Two distinct contrasts (and why EDR is not wiring).} It is essential
+to keep two comparisons separate. The \emph{geometry-vs-wiring} contrast,
+$\mathrm{AUC}(\text{geometric})-\mathrm{AUC}(\text{connectome})$, pits cortical
+\emph{shape} against the \emph{real structural connectome} --- including its
+long-range tracts --- and is the headline of this paper. The
+\emph{geometry-vs-distance} contrast,
+$\mathrm{AUC}(\text{geometric})-\mathrm{AUC}(\text{EDR})$, pits shape against a
+\emph{distance-decay surrogate}; because EDR encodes only ``connections fall off
+with distance'' it is itself a geometric object, \emph{not} a model of wiring.
+A shift in the first contrast is a statement about shape versus wiring; a shift
+in the second is a statement about two flavours of geometry and must not be read
+as a wiring result.
 
 \subsection{Statistics}
 The within-subject \emph{shift} is the per-subject change in basis advantage
@@ -310,6 +327,48 @@ substantive result, not any single $p$-value.
   \label{fig:psilo}
 \end{figure}
 
+\subsection{Vertex-resolution robustness check}
+The principal limitation of the analyses above is their 400-region parcellation,
+the regime in which the geometric advantage is weakest. We therefore repeated the
+reconstruction comparison on the psilocybin cohort at \emph{vertex} resolution, in
+fsaverage5 space (10{,}242 vertices, left hemisphere), the resolution at which Pang
+et al.\ \cite{pang2023} publish eigenbases. The fsLR-32k BOLD was resampled to
+fsaverage5 with a pure-Python area-average resampler built from registration-fusion
+spheres (validated against native Laplace--Beltrami modes, $|r|=0.86$--$0.97$ for
+the lowest modes). Two findings emerge (Figure~\ref{fig:vertex}).
+
+First, the \textbf{geometric basis reconstructs vertex BOLD efficiently}
+(AUC $\approx 0.32$--$0.34$), close to EDR ($\approx 0.30$--$0.32$): the geometry
+result is not an artifact of parcellation.
+
+Second, and reported in the interest of full honesty, a fair geometry-versus-\emph{wiring}
+test is \textbf{not possible at vertex resolution with public data}. The only
+publicly available connectome modes are a synthetic demo surrogate (degenerate
+spectrum, near-zero reconstruction), and real tractography connectome eigenmodes are
+not released at vertex resolution. The geometry-vs-wiring shift therefore remains a
+parcellated result. The contrast we \emph{can} evaluate at vertex resolution,
+geometry vs.\ EDR (shape vs.\ distance), shows a small but significant shift of the
+\emph{opposite} sign to the parcellated geometry-vs-connectome shift:
+$\Delta(\text{geometric}-\text{EDR})=-0.0067$, 95\% CI $[-0.011,-0.002]$,
+paired $t(6)=-3.55$ ($p=0.012$), Wilcoxon/permutation $p=0.031$, $d_z=-1.34$. The
+``toward geometry'' effect is thus \emph{specific to the geometry-vs-wiring contrast}
+and does not generalize to geometry-vs-distance at fine scale; overall reconstruction
+also drops modestly under psilocybin for both bases. The parcellated headline is
+about cortical shape versus \emph{specific wiring}, not a blanket claim that geometry
+wins under psychedelics at every scale and contrast.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{vertex_basis_comparison.png}
+  \caption{\textbf{Vertex-resolution check (psilocybin, fsaverage5-10k, $n=7$, left
+  hemisphere).} Reconstruction accuracy under methylphenidate (left) and psilocybin
+  (middle) for the geometric and EDR bases (the public connectome basis is a synthetic
+  surrogate that reconstructs near zero and is shown only for reference). Right:
+  per-subject geometric$-$EDR advantage, which shifts slightly toward EDR under
+  psilocybin ($\Delta=-0.0067$, permutation $p=0.031$).}
+  \label{fig:vertex}
+\end{figure}
+
 \section{Discussion}
 Across two independent psychedelic datasets, cortical activity shifts toward a
 smoother, shape-aligned (geometric) description and away from one tied to specific
@@ -328,7 +387,10 @@ weakest, and in which geometric modes are hemisphere-separable while connectome
 and EDR modes are whole-brain. We therefore frame Experiment 3 as a test of the
 drug-induced \emph{shift}, not as a resolution of the broader geometry-versus-wiring
 debate, which requires vertex-resolution surfaces and carefully constructed
-connectomes \cite{mansour2024}. The LSD data lack fmriprep motion parameters, so
+connectomes \cite{mansour2024}; our own vertex-resolution attempt
+(Section~3.5) confirms that a fair geometry-vs-wiring comparison is currently
+blocked by the absence of public real-connectome eigenmodes at that resolution.
+The LSD data lack fmriprep motion parameters, so
 no full 24-parameter motion regression is possible; after denoising neither basis
 significantly beats the other within a single state (the claim is about the shift).
 Sample sizes are modest ($n=12$ and $n=7$), and the psilocybin cohort uses an

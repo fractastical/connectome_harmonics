@@ -7,3 +7,7 @@ matplotlib==3.10.9
 nibabel==5.4.2
 nilearn==0.13.1
 lapy==1.6.0
+# Vertex-resolution check (compare_bases_vertex.py): fsLR->fsaverage5 resampling
+# (registration-fusion spheres, no Connectome Workbench needed) + MATLAB v7.3 modes.
+h5py==3.16.0
+neuromaps==0.0.6
