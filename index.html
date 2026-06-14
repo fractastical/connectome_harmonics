@@ -21,12 +21,19 @@
   body { overflow-x: hidden; overflow-y: auto; }
 
   /* ---- Top summary hero ------------------------------------------------ */
-  .hero { width: 100%; background:
+  .hero { position: relative; overflow: hidden; width: 100%; background:
       radial-gradient(1200px 380px at 18% -10%, rgba(142,197,255,.14), transparent 60%),
       radial-gradient(1100px 360px at 88% -16%, rgba(201,160,255,.16), transparent 60%),
       linear-gradient(180deg, #0c111b 0%, #090b10 100%);
     border-bottom: 1px solid rgba(255,255,255,.08); }
-  .hero-inner { max-width: 1180px; margin: 0 auto; padding: 46px 26px 30px; }
+  /* faint connectome-harmonic dot field behind the hero copy */
+  .hero::before { content: ""; position: absolute; inset: 0;
+    background: url("assets/hero_harmonics_bg.png") no-repeat center top;
+    background-size: 115% auto; opacity: .22;
+    -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.5) 55%, transparent 92%);
+            mask-image: linear-gradient(180deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.5) 55%, transparent 92%);
+    pointer-events: none; z-index: 0; }
+  .hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 46px 26px 30px; }
   .kicker { display: inline-block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); background: rgba(142,197,255,.10); border: 1px solid rgba(142,197,255,.28); padding: 5px 11px; border-radius: 999px; }
   .hero-title { font-size: clamp(26px, 4vw, 40px); line-height: 1.12; font-weight: 800; margin: 16px 0 0; letter-spacing: -.01em;
     background: linear-gradient(92deg, #eaf2ff 0%, #c9a0ff 60%, #8ec5ff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }

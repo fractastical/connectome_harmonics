@@ -53,3 +53,32 @@ fig.suptitle(
 fig.tight_layout()
 fig.savefig(OUT, dpi=140, facecolor=fig.get_facecolor(), bbox_inches="tight")
 print("Wrote", OUT)
+
+
+# ---------------------------------------------------------------------------
+# Decorative, text-free background for the website hero (transparent PNG).
+# Two brains (a smooth low mode and a fine high mode) rendered as soft dot
+# clouds so the page's gradient shows through behind them.
+# ---------------------------------------------------------------------------
+BG_OUT = ROOT / "assets" / "hero_harmonics_bg.png"
+BG_OUT.parent.mkdir(exist_ok=True)
+
+bg_modes = [2, 18]
+bgfig, bgaxes = plt.subplots(1, len(bg_modes), figsize=(16, 7))
+bgfig.patch.set_alpha(0.0)
+for ax, m in zip(np.atleast_1d(bgaxes), bg_modes):
+    ax.set_facecolor("none")
+    ax.set_aspect("equal")
+    ax.axis("off")
+    for i, j, w in edges:
+        ax.plot([nodes[i, 0], nodes[j, 0]], [nodes[i, 1], nodes[j, 1]],
+                lw=0.2 + 0.7 * w, alpha=0.05, color="#aacbff", zorder=1)
+    field = modes[m - 1]
+    field = field / np.max(np.abs(field))
+    ax.scatter(nodes[:, 0], nodes[:, 1], c=field, s=120, cmap="coolwarm",
+               vmin=-1, vmax=1, edgecolors="none", alpha=0.55, zorder=2)
+
+bgfig.subplots_adjust(left=0, right=1, top=1, bottom=0, wspace=0.02)
+bgfig.savefig(BG_OUT, dpi=130, transparent=True, bbox_inches="tight",
+              pad_inches=0)
+print("Wrote", BG_OUT)
