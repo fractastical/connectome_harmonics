@@ -83,10 +83,23 @@ connections. The eigenvectors of the graph Laplacian of this network form a set
 of \emph{connectome harmonics}: spatial standing-wave patterns ordered from
 smooth and global (low spatial frequency) to fine-grained (high spatial
 frequency), analogous to the vibrational modes of a drum
-\cite{atasoy2016}. Resting-state and task fMRI can be decomposed into this
+\cite{atasoy2016} (Figure~\ref{fig:harmonics}). Resting-state and task fMRI can be decomposed into this
 basis, and Atasoy et al.\ \cite{atasoy2017} reported that lysergic acid
 diethylamide (LSD) reorganizes the harmonic repertoire, expanding the range of
 active modes.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{connectome_harmonic_modes.png}
+  \caption{\textbf{Connectome harmonics on the brain.} Three graph-Laplacian
+  eigenmodes of the HCP Schaefer-400 structural connectome, rendered on the
+  cortical layout (red/blue = opposite sign of the standing-wave pattern; this is
+  the basis the interactive demo animates). Low modes are broad and global, higher
+  modes increasingly fine-grained; each mode's eigenvalue $\lambda$ gives its
+  spatial frequency. Brain activity is reconstructed as weighted sums of such
+  modes.}
+  \label{fig:harmonics}
+\end{figure}
 
 A parallel line of work \cite{pang2023} has argued that the \emph{geometry}
 of the cortical surface --- captured by the eigenmodes of the Laplace--Beltrami
