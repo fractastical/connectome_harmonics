@@ -4,7 +4,7 @@ An interactive investigation of **connectome harmonics** — graph-Laplacian eig
 
 **Live demo:** https://fractastical.github.io/connectome_harmonics/
 
-**📄 Preprint (PDF):** [`paper/connectome_harmonics_psychedelics.pdf`](paper/connectome_harmonics_psychedelics.pdf) — arXiv-style write-up of the experiments, replication, and vertex-resolution check (LaTeX source in [`paper/`](paper/)).
+**📄 Preprint (PDF):** [`paper/connectome_harmonics_psychedelics.pdf`](paper/connectome_harmonics_psychedelics.pdf) — arXiv-style write-up of the experiments, replication, vertex-resolution check, and the harmonic-consonance / Symmetry-Theory-of-Valence probe (LaTeX source in [`paper/`](paper/)).
 
 ![Harmonic mode animation](connectome_harmonics_preview.gif)
 
@@ -20,6 +20,7 @@ Built on real data: the **HCP-YA group-average Schaefer-400 structural connectom
 | 2 | **Is there a geometric "latent space" in the brain?** | **Yes.** The 7 Yeo networks separate into a continuous layout in harmonic (eigenmap) coordinates — emerging from connectivity alone, with no labels given to the algorithm. |
 | 3 | **Shape vs wiring — which explains activity, and does LSD change it?** | **A coarse tie; geometry ≳ wiring** (distance-only EDR basis best overall, à la [Pang 2023](https://www.nature.com/articles/s41586-023-06098-1)). Novel angle: under LSD the **geometric basis gains on the connectome** in a **within-subject paired test** — Δ ≈ +0.006, 95% CI [+0.003, +0.009], paired t(11) = 4.6, **p = 0.0008** (Wilcoxon p = 0.001, exact permutation p = 0.001), Cohen's d_z = 1.3 (large), 12/12 subjects. **Survives nuisance regression** (GSR + detrend + DVARS censoring): attenuates to Δ ≈ +0.004 but stays significant (p = 0.002, perm p = 0.003) — not merely a motion/global-signal artifact. |
 | 3b | **Does that LSD shift replicate in an independent psychedelic dataset?** | **Yes, in direction; partial on significance.** A second, independent cohort — psilocybin vs active placebo (methylphenidate), [OpenNeuro ds006072](https://openneuro.org/datasets/ds006072), n = 7, fsLR-surface CIFTI → Schaefer-400 — shows the **same geometry-gains-under-drug direction**: Δ = +0.010, Cohen's d_z = 0.87 (large), **significant by exact sign-flip permutation and Wilcoxon (both p = 0.031)**, borderline by paired t (p = 0.061). Attenuates and drops below threshold under aggressive GSR (Δ = +0.006, perm p = 0.063). Different drug, different scanner, different preprocessing — so the converging direction is meaningful, even though n = 7 with an active placebo is underpowered. |
+| 4 | **Does the psychedelic brain become more "harmonious" (Symmetry Theory of Valence)?** | **No — the opposite direction.** Scoring the **consonance/spectral symmetry** of the connectome-harmonic spectrum (Sethares sensory dissonance, spectral entropy, centroid) per subject/state, LSD makes the spectrum **more dissonant** (Δ = +16.7, paired **p = 0.001**, exact-permutation p = 0.002, Cohen's d_z = 1.24), **broader** (entropy p = 0.007) and **higher-frequency** (centroid p = 0.015) — all surviving GSR. Psilocybin (n = 7) trends the same way (n.s.). This is the "entropic brain" direction, **against** a naive "psychedelic ⇒ more symmetry/consonance ⇒ positive valence" reading of [STV](https://opentheory.net/PrincipiaQualia/). It also shows "drift toward the smooth geometric basis" (Exp 3) ≠ "more consonant." *Tests the mechanism direction only — no per-subject affect labels exist in either release.* |
 
 > **Scope & honesty:** results are **group-average and parcellated (400 regions)** — real data, but coarse-grained, not individual or diagnostic, and not medical advice. The geometry-vs-connectivity result is illustrative, not a settlement of that debate (cf. [Mansour 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1)); the decisive test needs vertex-resolution surfaces.
 
@@ -89,6 +90,7 @@ python3 -m venv .venv
 | `compare_bases.py` | Geometry vs connectivity reconstruction (Pang 2023, parcellated) |
 | `replicate_psilocybin.py` | Independent replication of the LSD shift on psilocybin (ds006072) |
 | `compare_bases_vertex.py` | Vertex-resolution (fsaverage5-10k) robustness check on psilocybin |
+| `harmonic_consonance.py` | Harmonic consonance / spectral-symmetry probe (Symmetry Theory of Valence) |
 | `chap_compat.py` | CHAP-compatible harmonic projection math |
 | `lsd_results/` | Precomputed LSD spectra + basis comparison |
 | `.github/workflows/pages.yml` | GitHub Pages deploy on push to `main` |
@@ -259,6 +261,31 @@ What we *can* test at vertex resolution is **geometry vs EDR** (shape vs distanc
 
 ---
 
+## Harmonic consonance & the Symmetry Theory of Valence (`harmonic_consonance.py`)
+
+A natural question this framework invites: *does the degree of geometric/harmonic order correlate with positive affect?* The [**Symmetry Theory of Valence**](https://opentheory.net/PrincipiaQualia/) (Johnson 2016) proposes that how pleasant an experience feels tracks the **symmetry** of its neural representation; the Qualia Research Institute operationalizes this on connectome harmonics via **consonance** — whether the active harmonics stand in simple, mutually reinforcing frequency relationships, as in musical consonance.
+
+We can't test the affect *correlation* directly — **neither ds003059 nor ds006072 ships per-subject mood/affect ratings** (checked on OpenNeuro). So we test the **mechanism direction**: does a serotonergic psychedelic move the harmonic spectrum *toward* consonance/symmetry, or *away*? Per subject and state we project BOLD onto the connectome harmonics, take the power per mode, map spatial frequencies √λ to an audio range (ratios preserved), and score:
+
+- **Sethares (1993) sensory dissonance** of the spectrum-as-chord (lower = more consonant),
+- **spectral entropy** (repertoire breadth), **spectral centroid** (high vs low spatial frequency), low/high power ratio,
+
+then run the same within-subject paired test + exact sign-flip permutation + GSR robustness rerun as Exp 3.
+
+```bash
+.venv-lsd/bin/python harmonic_consonance.py          # both datasets (uses cached data)
+```
+
+Outputs: `lsd_results/harmonic_consonance.json` + `.png`.
+
+**Result — against the naive prediction.** Under LSD the harmonic spectrum becomes **more dissonant** (Δ = +16.7, paired **p = 0.001**, exact-permutation p = 0.002, **d_z = 1.24**), **broader** (entropy p = 0.007) and shifted toward **higher** spatial frequencies (centroid p = 0.015) — all surviving global-signal regression. Psilocybin (n = 7) trends the same way (dissonance ↑, d_z = 0.49) but is not significant. On the geometric-harmonic substrate the LSD effect is weaker but same-signed (dissonance p = 0.022).
+
+This is the **"entropic brain"** direction — the *opposite* of a simple "psychedelic bliss ⇒ more symmetry/consonance" reading of STV. It also makes a conceptual point precise: **"drift toward the smooth geometric basis" (Exp 3) ≠ "more consonant."** Activity can gain on the *wiring* basis relative to *shape* while the overall spectrum still spreads to higher modes.
+
+> ⚠️ STV caveats: this tests the mechanism direction, **not** the affect correlation (no valence labels available); it measures *spatial*-harmonic consonance, while QRI's "neural annealing" predicts a transient rise in energy/entropy before annealing (so acute broadening is not a clean refutation); n = 12 / 7, parcellated; the √λ→Hz mapping is a modelling choice (direction is robust across raw, GSR, permutation, and both harmonic substrates for LSD).
+
+---
+
 ## Deploy (GitHub Pages)
 
 **Target:** `fractastical/connectome_harmonics` → https://fractastical.github.io/connectome_harmonics/
@@ -288,6 +315,8 @@ A mirror exists at [cimcai/connectome_harmonics](https://github.com/cimcai/conne
 | [Siegel et al. 2025](https://openneuro.org/datasets/ds006072) | Psilocybin precision-imaging dataset (OpenNeuro ds006072) — replication cohort |
 | [Pang et al. 2023](https://www.nature.com/articles/s41586-023-06098-1) | Geometric constraints on brain function (geometry vs connectome) |
 | [Mansour et al. 2024](https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1) | Rebuttal — connectome construction drives the comparison |
+| [Johnson 2016](https://opentheory.net/PrincipiaQualia/) | Principia Qualia — Symmetry Theory of Valence (Exp 4) |
+| [Sethares 1993](https://sethares.engr.wisc.edu/comprog.html) | Sensory-dissonance / local-consonance model (consonance metric) |
 | [CHAP](https://github.com/HopkinsPsychedelic/connectome_harmonic_core) | Full vertex-level connectome harmonic pipeline |
 | [NSBLab/BrainEigenmodes](https://github.com/NSBLab/BrainEigenmodes) | Pang 2023 surfaces, parcellations, eigenmode tools |
 

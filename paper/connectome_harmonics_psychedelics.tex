@@ -44,7 +44,7 @@ structural connectome --- provide a frequency-ordered basis for brain activity.
 We combine a group-average Human Connectome Project (HCP) Schaefer-400 structural
 connectome with two independent within-subject psychedelic fMRI datasets
 (LSD: OpenNeuro \texttt{ds003059}, $n=12$; psilocybin: OpenNeuro \texttt{ds006072},
-$n=7$) and ask three questions. (1) \emph{Does LSD reorganize the harmonic
+$n=7$) and ask four questions. (1) \emph{Does LSD reorganize the harmonic
 spectrum?} At parcellated scale low-frequency harmonics lose power under LSD
 (low-band LSD/placebo power ratio $\approx 0.77$), reproducing the direction of
 Atasoy et al.\ (2017). (2) \emph{Is there a geometric latent space?} Using the
@@ -65,11 +65,19 @@ borderline parametrically ($t$-test $p=0.061$) and attenuating below threshold
 under aggressive denoising. A vertex-resolution check (fsaverage5-10k) confirms the
 geometric basis reconstructs activity efficiently off the parcellation, but shows
 that a fair geometry-versus-wiring test is not achievable at vertex resolution with
-public data and that the shift is specific to the geometry-vs-wiring contrast. We
+public data and that the shift is specific to the geometry-vs-wiring contrast.
+(4) \emph{Does the harmonic spectrum become more consonant/symmetric, as the
+Symmetry Theory of Valence would predict for a typically positively-valenced
+state?} Scoring the sensory dissonance, spectral entropy, and centroid of the
+connectome-harmonic power spectrum per subject and state, we find the
+\emph{opposite}: under LSD the spectrum becomes significantly more dissonant
+($p=0.001$, $d_z=1.24$, surviving denoising), broader, and higher-frequency, with
+psilocybin trending the same way --- the ``entropic brain'' direction. We
 interpret these results as evidence that
 psychedelics shift cortical activity toward smoother, shape-aligned spatial
-patterns and away from specific wiring, while emphasizing the coarse,
-parcellated resolution and modest sample sizes. All code, data-fetching
+patterns and away from specific wiring, even as the overall harmonic repertoire
+broadens and de-tunes, while emphasizing the coarse, parcellated resolution and
+modest sample sizes. All code, data-fetching
 scripts, and an interactive web demonstration are openly available.
 \end{abstract}
 
@@ -185,6 +193,26 @@ with distance'' it is itself a geometric object, \emph{not} a model of wiring.
 A shift in the first contrast is a statement about shape versus wiring; a shift
 in the second is a statement about two flavours of geometry and must not be read
 as a wiring result.
+
+\subsection{Harmonic consonance metric (Experiment 4)}
+To probe the Symmetry Theory of Valence (STV)~\cite{johnson2016}, which posits
+that the pleasantness of an experience tracks the \emph{symmetry} of its neural
+representation and which has been operationalized on connectome harmonics via
+musical-style \emph{consonance}, we summarize the harmonic power spectrum of each
+subject and state. We project the (spatially centred, $z$-scored) parcellated BOLD
+onto the orthonormal connectome harmonics, obtaining the time-averaged relative
+power $p_k$ in mode $k$ ($\sum_k p_k=1$), and assign each mode the spatial
+frequency $\omega_k=\sqrt{\lambda_k}$ from its Laplacian eigenvalue. From
+$\{\omega_k,p_k\}$ we compute: (i) the \textbf{Sethares}~\cite{sethares1993}
+\emph{sensory dissonance} of the spectrum treated as a chord, with $\omega_k$
+mapped proportionally to an audio range (so frequency \emph{ratios}, hence
+consonance relations, are preserved and identical across conditions; lower
+dissonance $=$ more consonant); (ii) the normalized \textbf{spectral entropy} of
+$p$ (repertoire breadth); and (iii) the \textbf{spectral centroid}
+$\sum_k p_k\omega_k$ (energy toward high spatial frequency). Each metric is
+submitted to the same within-subject paired test, exact sign-flip permutation
+null, and GSR robustness rerun as the basis advantage. We also recompute all
+metrics on the geometric harmonics as a substrate check.
 
 \subsection{Statistics}
 The within-subject \emph{shift} is the per-subject change in basis advantage
@@ -382,6 +410,44 @@ wins under psychedelics at every scale and contrast.
   \label{fig:vertex}
 \end{figure}
 
+\subsection{Experiment 4: harmonic consonance decreases under psychedelics}
+A natural extension asks whether the degree of geometric/harmonic order relates to
+affect, as the Symmetry Theory of Valence~\cite{johnson2016} proposes. We cannot
+test this correlation directly --- neither public release ships per-subject affect
+ratings --- so we test the prerequisite \emph{mechanism direction}: does a
+serotonergic psychedelic move the harmonic spectrum toward consonance/symmetry, or
+away from it? The answer is unambiguous and runs \emph{against} the naive STV
+prediction (Figure~\ref{fig:consonance}). Under LSD the connectome-harmonic
+spectrum becomes markedly \textbf{more dissonant} (drug$-$placebo
+$\Delta=+16.7$, paired $p=0.001$, exact permutation $p=0.002$, $d_z=1.24$),
+\textbf{broader} (spectral entropy $p=0.007$), and shifted toward \textbf{higher}
+spatial frequencies (centroid $p=0.015$); all three survive global-signal
+regression and frame censoring. Psilocybin ($n=7$) trends in the same direction on
+every metric but does not reach significance (dissonance $\Delta=+11.0$, $d_z=0.49$,
+$p=0.24$). On the geometric-harmonic substrate the LSD dissonance increase is
+weaker but same-signed ($\Delta=+2.1$, $p=0.022$).
+
+This is the ``entropic brain'' direction~\cite{atasoy2017} and clarifies a subtle
+point: the drift toward the smooth geometric \emph{basis} in Experiment 3 is
+\emph{not} the same as increased \emph{consonance}. Activity can gain on the wiring
+basis relative to shape while the overall power spectrum simultaneously spreads to
+higher, less harmonically related modes. If anything, a simple spatial-consonance
+reading of STV predicts the wrong sign for the (typically positively-valenced)
+acute psychedelic state; we discuss the caveats to that inference below.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{harmonic_consonance.png}
+  \caption{\textbf{Harmonic consonance / spectral symmetry under psychedelics
+  (connectome harmonics).} Per-subject paired change (placebo$\to$drug) in Sethares
+  dissonance (top), spectral entropy (middle), and spectral centroid (bottom), for
+  psilocybin (left, $n=7$) and LSD (right, $n=12$); green lines move toward
+  symmetry/consonance, red away. White $=$ raw means, blue dashed $=$ after GSR.
+  Under LSD nearly every subject moves away from consonance (more dissonant,
+  broader, higher-frequency); psilocybin trends the same way.}
+  \label{fig:consonance}
+\end{figure}
+
 \section{Discussion}
 Across two independent psychedelic datasets, cortical activity shifts toward a
 smoother, shape-aligned (geometric) description and away from one tied to specific
@@ -393,6 +459,23 @@ low-frequency, wiring-bound structure under LSD) and the unsupervised geometric
 latent space of Experiment 2, the picture is coherent: psychedelics appear to
 relax activity off the connectome's specific scaffolding toward the broad
 geometric modes that the cortex's shape most readily supports.
+
+\paragraph{Consonance and valence.} Experiment 4 adds an important qualification.
+The same psychedelic state that aligns activity with smooth geometric modes also
+makes the harmonic power spectrum \emph{less} consonant and broader --- the
+opposite of what a literal spatial-consonance reading of the Symmetry Theory of
+Valence~\cite{johnson2016} would predict for a typically positive state. We stress
+that this is not a refutation of STV: we measure \emph{spatial}-harmonic, not
+temporal, consonance; the acute psychedelic state is variably (not uniformly)
+valenced; and the ``neural annealing'' formulation of STV explicitly predicts a
+transient rise in energy and entropy (``heating'') before any annealing toward
+order, so a snapshot of increased breadth during the drug condition is consistent
+with that account. Most importantly, without per-subject affect ratings --- absent
+from both public datasets --- we test only the mechanism direction, not the
+valence correlation itself. The result is best read as a sharp, falsifiable
+prediction generator: it shows that ``more geometric alignment'' and ``more
+harmonic consonance'' are dissociable, and that a proper STV test will require
+datasets pairing connectome-harmonic decompositions with validated affect scales.
 
 \paragraph{Limitations.} All results are group-average and/or parcellated at 400
 regions --- precisely the regime in which the geometric advantage over wiring is
@@ -454,6 +537,14 @@ The relative contributions of connectome geometry and wiring to brain function
 \bibitem{siegel2025} Siegel, J. S., et al. (2025). Psilocybin precision
 functional imaging dataset. \emph{Scientific Data}.
 OpenNeuro \texttt{ds006072}. \url{https://openneuro.org/datasets/ds006072}.
+
+\bibitem{johnson2016} Johnson, M. E. (2016). \emph{Principia Qualia: Blueprint
+for a New Science}. Qualia Research Institute.
+\url{https://opentheory.net/PrincipiaQualia/}.
+
+\bibitem{sethares1993} Sethares, W. A. (1993). Local consonance and the
+relationship between timbre and scale. \emph{Journal of the Acoustical Society of
+America}, 94(3), 1218--1228.
 \end{thebibliography}
 
 \end{document}
