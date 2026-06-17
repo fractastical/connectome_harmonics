@@ -195,24 +195,63 @@ in the second is a statement about two flavours of geometry and must not be read
 as a wiring result.
 
 \subsection{Harmonic consonance metric (Experiment 4)}
-To probe the Symmetry Theory of Valence (STV)~\cite{johnson2016}, which posits
-that the pleasantness of an experience tracks the \emph{symmetry} of its neural
-representation and which has been operationalized on connectome harmonics via
-musical-style \emph{consonance}, we summarize the harmonic power spectrum of each
-subject and state. We project the (spatially centred, $z$-scored) parcellated BOLD
-onto the orthonormal connectome harmonics, obtaining the time-averaged relative
-power $p_k$ in mode $k$ ($\sum_k p_k=1$), and assign each mode the spatial
-frequency $\omega_k=\sqrt{\lambda_k}$ from its Laplacian eigenvalue. From
-$\{\omega_k,p_k\}$ we compute: (i) the \textbf{Sethares}~\cite{sethares1993}
-\emph{sensory dissonance} of the spectrum treated as a chord, with $\omega_k$
-mapped proportionally to an audio range (so frequency \emph{ratios}, hence
-consonance relations, are preserved and identical across conditions; lower
-dissonance $=$ more consonant); (ii) the normalized \textbf{spectral entropy} of
-$p$ (repertoire breadth); and (iii) the \textbf{spectral centroid}
-$\sum_k p_k\omega_k$ (energy toward high spatial frequency). Each metric is
-submitted to the same within-subject paired test, exact sign-flip permutation
-null, and GSR robustness rerun as the basis advantage. We also recompute all
-metrics on the geometric harmonics as a substrate check.
+The Symmetry Theory of Valence (STV)~\cite{johnson2023} posits that the
+pleasantness of an experience tracks the \emph{symmetry} of its neural
+representation, and has been operationalized on connectome harmonics via
+musical-style \emph{consonance}. Every metric below is a one-number summary of a
+single object, the \emph{harmonic power spectrum} of a scan, which we build as
+follows.
+
+\paragraph{Harmonic power spectrum.} Let $Y\in\mathbb{R}^{400\times T}$ be the
+per-region $z$-scored BOLD and $V=[\,v_1,\dots,v_K\,]$ the orthonormal connectome
+harmonics (eigenvectors of the graph Laplacian, eigenvalues $\lambda_1\le\dots\le
+\lambda_K$, $K=200$). After removing each frame's spatial mean
+($\tilde Y_{:,t}=Y_{:,t}-\bar Y_{:,t}$), we project onto the harmonics,
+$C=V^\top\tilde Y$, so $C_{k,t}$ is the instantaneous amplitude of mode $k$. The
+\emph{relative power} of mode $k$ is its time-averaged squared amplitude,
+normalized to a distribution:
+\begin{equation}
+p_k \;=\; \frac{\langle C_{k,t}^2\rangle_t}{\sum_{j}\langle C_{j,t}^2\rangle_t},
+\qquad \sum_k p_k = 1 .
+\end{equation}
+Each mode also carries a spatial frequency $\omega_k=\sqrt{\lambda_k}$ (the
+vibrating-membrane analogy: low modes are smooth/global, high modes fine-grained).
+The pair $\{\omega_k,p_k\}$ is the spectrum; the three metrics are different
+summaries of it.
+
+\paragraph{Spectral entropy and centroid.} The normalized Shannon entropy
+\begin{equation}
+H \;=\; -\frac{1}{\ln K}\sum_{k} p_k \ln p_k \;\in[0,1]
+\end{equation}
+measures how \emph{spread out} the power is ($H\to 0$: concentrated in a few modes;
+$H\to 1$: a broad, flat repertoire). The spectral centroid
+$\bar\omega=\sum_k p_k\,\omega_k$ is the power-weighted mean spatial frequency
+(higher $=$ energy in finer modes). We also report the ratio of power in the
+lowest to the highest third of modes.
+
+\paragraph{Sethares consonance.} Unlike $H$ and $\bar\omega$, consonance depends on
+the \emph{relationships between} modes. Treating the spectrum as a chord --- each
+mode a tone of frequency $f_k$ and amplitude $a_k=\sqrt{p_k}$ --- we sum the
+Plomp--Levelt/Sethares~\cite{sethares1993} sensory dissonance over all pairs:
+\begin{equation}
+D \;=\; \sum_{i<j} \min(a_i,a_j)\Big(e^{-A_1 s_{ij}\,|f_i-f_j|}
+                                    - e^{-A_2 s_{ij}\,|f_i-f_j|}\Big),
+\quad s_{ij}=\frac{D^\star}{S_1\min(f_i,f_j)+S_2},
+\end{equation}
+with Sethares' constants $A_1=3.51$, $A_2=5.75$, $D^\star=0.24$, $S_1=0.0207$,
+$S_2=18.96$. The two-exponential kernel is zero for identical tones, peaks at a
+small separation (roughly one critical band), and decays for well-separated tones:
+power landing in \emph{neighbouring} modes is penalized as ``beating.'' Lower $D$
+$=$ more consonant; we also report $1/(1+D)$. Because the Sethares constants are
+calibrated in Hz, we map $\omega_k$ proportionally into the audible range
+($f_k = 220\,\omega_k/\min_k\omega_k$, lowest mode $\to220$\,Hz); this preserves
+all frequency \emph{ratios} and is applied identically to every subject and state,
+so it cannot bias the drug-vs-control contrast (we treat the absolute scaling as a
+modelling choice and verify robustness to it).
+
+Each metric is submitted to the same within-subject paired test, exact sign-flip
+permutation null, and GSR robustness rerun as the basis advantage. We also
+recompute all metrics on the geometric harmonics as a substrate check.
 
 \subsection{Statistics}
 The within-subject \emph{shift} is the per-subject change in basis advantage
@@ -412,7 +451,7 @@ wins under psychedelics at every scale and contrast.
 
 \subsection{Experiment 4: harmonic consonance decreases under psychedelics}
 A natural extension asks whether the degree of geometric/harmonic order relates to
-affect, as the Symmetry Theory of Valence~\cite{johnson2016} proposes. We cannot
+affect, as the Symmetry Theory of Valence~\cite{johnson2023} proposes. We cannot
 test this correlation directly --- neither public release ships per-subject affect
 ratings --- so we test the prerequisite \emph{mechanism direction}: does a
 serotonergic psychedelic move the harmonic spectrum toward consonance/symmetry, or
@@ -464,7 +503,7 @@ geometric modes that the cortex's shape most readily supports.
 The same psychedelic state that aligns activity with smooth geometric modes also
 makes the harmonic power spectrum \emph{less} consonant and broader --- the
 opposite of what a literal spatial-consonance reading of the Symmetry Theory of
-Valence~\cite{johnson2016} would predict for a typically positive state. We stress
+Valence~\cite{johnson2023} would predict for a typically positive state. We stress
 that this is not a refutation of STV: we measure \emph{spatial}-harmonic, not
 temporal, consonance; the acute psychedelic state is variably (not uniformly)
 valenced; and the ``neural annealing'' formulation of STV explicitly predicts a
@@ -538,9 +577,10 @@ The relative contributions of connectome geometry and wiring to brain function
 functional imaging dataset. \emph{Scientific Data}.
 OpenNeuro \texttt{ds006072}. \url{https://openneuro.org/datasets/ds006072}.
 
-\bibitem{johnson2016} Johnson, M. E. (2016). \emph{Principia Qualia: Blueprint
-for a New Science}. Qualia Research Institute.
-\url{https://opentheory.net/PrincipiaQualia/}.
+\bibitem{johnson2023} Johnson, M. E. (2023). \emph{Qualia Formalism and a
+Symmetry Theory of Valence}. The Symmetry Institute / OpenTheory. (A condensed,
+updated version of \emph{Principia Qualia}, 2016.)
+\url{https://opentheory.net/Qualia_Formalism_and_a_Symmetry_Theory_of_Valence.pdf}.
 
 \bibitem{sethares1993} Sethares, W. A. (1993). Local consonance and the
 relationship between timbre and scale. \emph{Journal of the Acoustical Society of

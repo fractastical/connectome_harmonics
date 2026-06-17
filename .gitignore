@@ -14,3 +14,9 @@ lsd_results/*
 !lsd_results/vertex_basis_comparison.png
 !lsd_results/harmonic_consonance.json
 !lsd_results/harmonic_consonance.png
+
+# LaTeX build artifacts
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.synctex.gz

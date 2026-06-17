@@ -3,7 +3,8 @@ Harmonic consonance / spectral-symmetry under psychedelics (STV probe).
 
 Motivation
 ----------
-The Symmetry Theory of Valence (STV; Johnson 2016, *Principia Qualia*) proposes
+The Symmetry Theory of Valence (STV; Johnson 2023, *Qualia Formalism and a
+Symmetry Theory of Valence*; updated from *Principia Qualia*, 2016) proposes
 that the pleasantness (valence) of an experience tracks the *symmetry* of the
 mathematical object isomorphic to it. Gomez-Emilsson and the Qualia Research
 Institute operationalised this for the brain using Atasoy's connectome harmonics:
@@ -305,7 +306,7 @@ def main() -> None:
             "n_modes": args.modes,
             "freq_mapping": "omega_k = sqrt(lambda_k), mapped proportionally to audio Hz (lowest -> 220 Hz)",
             "metrics": METRICS + ["consonance"],
-            "stv_reference": "Johnson 2016 (Principia Qualia); Gomez-Emilsson / QRI harmonic consonance",
+            "stv_reference": "Johnson 2023 (Qualia Formalism and a Symmetry Theory of Valence; updated from Principia Qualia 2016); Gomez-Emilsson / QRI harmonic consonance",
             "caveats": ("n=12 (LSD)/7 (psilocybin), parcellated (Schaefer-400); "
                         "consonance is an STV proxy, not a valence measurement; "
                         "no per-subject affect ratings available in either release."),
