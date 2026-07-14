@@ -163,8 +163,8 @@
   .bar { flex: 1; height: 12px; border-radius: 999px; background: linear-gradient(90deg, rgb(30,82,172), rgb(240,243,247), rgb(191,40,32)); border: 1px solid rgba(255,255,255,.12); }
   .huebar { flex: 1; height: 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12);
     background: linear-gradient(90deg,
-      hsl(240,74%,58%), hsl(285,74%,60%), hsl(330,78%,62%), hsl(360,80%,60%),
-      hsl(330,78%,62%), hsl(285,74%,60%), hsl(240,74%,58%)); }
+      hsl(205,76%,58%), hsl(250,76%,60%), hsl(295,78%,62%), hsl(335,82%,62%), hsl(20,85%,60%),
+      hsl(335,82%,62%), hsl(295,78%,62%), hsl(250,76%,60%), hsl(205,76%,58%)); }
   .refs { list-style: none; padding: 0; margin: 0; }
   .refs li { margin: 8px 0; font-size: 12px; line-height: 1.4; }
   .refs a { color: var(--accent); text-decoration: none; }
@@ -348,8 +348,8 @@
       <label for="mode">harmonic mode: <strong id="modeVal">1</strong></label>
       <input id="mode" type="range" min="1" max="40" step="1" value="1" />
       <div class="chips" id="chips"></div>
-      <label for="speed">speed: <strong id="speedVal">0.50×</strong></label>
-      <input id="speed" type="range" min="0" max="3" step="0.01" value="0.5" />
+      <label for="speed">speed: <strong id="speedVal">0.25×</strong></label>
+      <input id="speed" type="range" min="0" max="3" step="0.01" value="0.25" />
       <label for="amp">amplitude: <strong id="ampVal">1.00</strong></label>
       <input id="amp" type="range" min="0.05" max="2" step="0.01" value="1" />
       <label for="coupling">coupling K (oscillator view): <strong id="couplingVal">1.2</strong></label>
@@ -642,8 +642,8 @@ function hsv2rgb(h, s, v){
 // (no hard blue↔red seam) while staying in the cool magenta family.
 function phaseColor(th){
   const u = 0.5 - 0.5 * Math.cos(th);      // 0 → 1 → 0 across one phase cycle
-  const hue = (240 + 120 * u) / 360;       // 240° blue → 300° magenta → 360° red
-  return hsv2rgb(hue, 0.74, 1.0);
+  const hue = (205 + 175 * u) / 360;       // 205° cyan-blue → purple → pink → 380° (20°) red-orange
+  return hsv2rgb(hue, 0.76, 1.0);
 }
 
 function normalize(arr){
