@@ -24,10 +24,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build static site
         run: |
-          mkdir -p _site/lsd_results
+          mkdir -p _site/lsd_results _site/assets _site/paper
           cp index.html .nojekyll _site/
           cp connectome_harmonics_data.json connectome_harmonics_data_hcp.json _site/
           cp -r lsd_results/*.json lsd_results/*.png _site/lsd_results/ 2>/dev/null || true
+          cp -r assets/* _site/assets/ 2>/dev/null || true
+          cp paper/connectome_harmonics_psychedelics.pdf _site/paper/ 2>/dev/null || true
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

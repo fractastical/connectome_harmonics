@@ -18,7 +18,10 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-  body { overflow-x: hidden; overflow-y: auto; }
+  body { overflow-x: hidden; overflow-y: auto; display: flex; flex-direction: column; }
+  /* Landing order: lead with the live oscillating brain, write-up below. */
+  .app { order: 1; flex-shrink: 0; }
+  .hero { order: 2; }
 
   /* ---- Top summary hero ------------------------------------------------ */
   .hero { position: relative; overflow: hidden; width: 100%; background:
@@ -50,6 +53,14 @@
   .hero-exps { display: grid; grid-template-columns: repeat(auto-fit, minmax(248px, 1fr)); gap: 14px; margin: 16px 0 0; }
   .exp { background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.10); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; }
   .exp-tag { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .exp.exp-muted { opacity: .62; background: rgba(255,255,255,.025); border-style: dashed; border-color: rgba(255,255,255,.14); }
+  .exp.exp-muted:hover { opacity: .9; }
+  .exp-tag.aside { color: var(--muted); }
+  .exp-aside-note { font-size: 11px; color: var(--muted); font-style: italic; margin: 2px 0 0; }
+  .aside-badge { display: inline-block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 2px 8px; margin-left: 8px; vertical-align: middle; font-weight: 600; }
+  .findings-list li.finding-aside { opacity: .62; }
+  .card.card-muted { opacity: .72; border-style: dashed; }
+  .card.card-muted:hover { opacity: .95; }
   .exp-q { font-size: 15px; font-weight: 720; color: #f0f5ff; margin: 7px 0 0; line-height: 1.3; }
   .exp-m { font-size: 12.5px; color: var(--muted); margin: 9px 0 0; line-height: 1.5; }
   .exp-m b { color: #d4e2f6; font-weight: 650; }
@@ -101,10 +112,25 @@
   .subtitle { color: var(--muted); font-size: 13px; margin-top: 3px; }
   .badge { font-size: 12px; color: #111; background: var(--warn); padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
   .badge.real { background: #9fd8b0; }
+  .header-right { display: flex; align-items: center; gap: 14px; align-self: center; }
+  .ec-logo { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; opacity: .78;
+    transition: opacity .2s ease; }
+  .ec-logo:hover { opacity: 1; }
+  .ec-logo img { height: 32px; width: auto; display: block; filter: brightness(0) invert(1); }
+  .ec-logo .ec-label { display: flex; flex-direction: column; line-height: 1.1; text-align: right; }
+  .ec-logo .ec-k { font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .ec-logo .ec-name { font-size: 12.5px; font-weight: 700; color: #e8eef9; letter-spacing: .01em; }
+  @media (max-width: 560px) { .ec-logo .ec-label { display: none; } }
   canvas#brain { width: 100%; height: calc(100vh - 88px); display: block; }
   .hud { position: absolute; left: 18px; bottom: 18px; background: rgba(9, 11, 16, .72); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 12px 14px; min-width: 260px; backdrop-filter: blur(8px); }
   .hud .line { display: flex; justify-content: space-between; gap: 18px; font-variant-numeric: tabular-nums; font-size: 13px; margin: 4px 0; }
   .hud .line span:first-child { color: var(--muted); }
+  .scrollcue { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 4;
+    font-size: 12.5px; font-weight: 600; color: var(--accent); text-decoration: none;
+    background: rgba(9,11,16,.72); border: 1px solid rgba(142,197,255,.28); border-radius: 999px;
+    padding: 7px 14px; backdrop-filter: blur(8px); animation: cuebob 1.9s ease-in-out infinite; }
+  .scrollcue:hover { background: #1d2a3d; }
+  @keyframes cuebob { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 5px); } }
   .sidebar { background: linear-gradient(180deg, #101725, #080b11); border-left: 1px solid rgba(255,255,255,.08); padding: 18px; overflow-y: auto; display: flex; flex-direction: column; }
   .card.findings { border-color: rgba(142,197,255,.4); background: linear-gradient(180deg, rgba(142,197,255,.12), rgba(201,160,255,.06)); }
   .findings-list { list-style: none; padding: 0; margin: 12px 0 0; counter-reset: f; }
@@ -135,6 +161,10 @@
   .eq { color: #d9e7ff; background: rgba(142,197,255,.08); border-radius: 12px; padding: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; overflow-x: auto; }
   .legend { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
   .bar { flex: 1; height: 12px; border-radius: 999px; background: linear-gradient(90deg, rgb(30,82,172), rgb(240,243,247), rgb(191,40,32)); border: 1px solid rgba(255,255,255,.12); }
+  .huebar { flex: 1; height: 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12);
+    background: linear-gradient(90deg,
+      hsl(0,72%,56%), hsl(60,72%,56%), hsl(120,72%,56%), hsl(180,72%,56%),
+      hsl(240,72%,56%), hsl(300,72%,56%), hsl(360,72%,56%)); }
   .refs { list-style: none; padding: 0; margin: 0; }
   .refs li { margin: 8px 0; font-size: 12px; line-height: 1.4; }
   .refs a { color: var(--accent); text-decoration: none; }
@@ -152,11 +182,11 @@
 </style>
 </head>
 <body>
-<section class="hero">
+<section class="hero" id="writeup">
   <div class="hero-inner">
     <span class="kicker">Connectome harmonics · computational neuroscience</span>
     <h1 class="hero-title">Brain activity rides the connectome's harmonics — and LSD bends which ones</h1>
-    <p class="hero-thesis">Four reproducible experiments on real human neuroimaging. We turn the brain's structural wiring into a graph, take the eigenmodes of its <span class="term" tabindex="0" data-tip="A matrix built from the connectivity graph. Its eigenvectors are the network's harmonics; its eigenvalues give each one a spatial frequency.">graph Laplacian</span> (the connectome's <span class="term" tabindex="0" data-tip="Eigenmodes of the connectome's graph Laplacian — spatial standing-wave patterns the network supports, from smooth (low frequency) to fine (high frequency).">harmonics</span>), project resting-state <span class="term" tabindex="0" data-tip="BOLD = blood-oxygen-level-dependent signal: the fMRI measurement used as a proxy for local brain activity.">fMRI</span> onto them, and ask what changes under a psychedelic. Every result below is interactive.</p>
+    <p class="hero-thesis">Three reproducible experiments on real human neuroimaging (plus one exploratory aside). We turn the brain's structural wiring into a graph, take the eigenmodes of its <span class="term" tabindex="0" data-tip="A matrix built from the connectivity graph. Its eigenvectors are the network's harmonics; its eigenvalues give each one a spatial frequency.">graph Laplacian</span> (the connectome's <span class="term" tabindex="0" data-tip="Eigenmodes of the connectome's graph Laplacian — spatial standing-wave patterns the network supports, from smooth (low frequency) to fine (high frequency).">harmonics</span>), project resting-state <span class="term" tabindex="0" data-tip="BOLD = blood-oxygen-level-dependent signal: the fMRI measurement used as a proxy for local brain activity.">fMRI</span> onto them, and ask what changes under a psychedelic. Every result below is interactive.</p>
 
     <div class="hero-datasets">
       <div class="ds"><span class="ds-k">Structural connectome</span><span class="ds-v">HCP-YA group average · <span class="term" tabindex="0" data-tip="Cortex divided into 400 regions (parcels). We analyze one activity value per region instead of per voxel or vertex.">Schaefer-400</span> parcellation</span><span class="ds-src"><a href="https://www.humanconnectome.org/study/hcp-young-adult" target="_blank" rel="noopener">HCP-YA</a><span class="sep">·</span><a href="https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal" target="_blank" rel="noopener">Schaefer atlas</a></span></div>
@@ -193,9 +223,10 @@
           <span class="pills"><span class="pill sig">ΔAUC +0.010</span><span class="pill sig">perm p=0.031</span><span class="pill sig">Wilcoxon p=0.031</span><span class="pill sig">d_z=0.87</span><span class="pill"><span class="term" tabindex="0" data-tip="The parametric paired t-test is borderline (p=0.061) and the effect drops just below threshold under aggressive global-signal regression (perm p=0.063). With n=7 against an active stimulant placebo the design is low-powered; the converging direction across two psychedelics is the result.">t p=0.061 · marginal after GSR</span></span></span>
         </p>
       </div>
-      <div class="exp">
-        <span class="exp-tag">Experiment 4</span>
+      <div class="exp exp-muted">
+        <span class="exp-tag aside">Exploratory aside</span>
         <div class="exp-q">Does the psychedelic brain become more “harmonious”? (<span class="term" tabindex="0" data-tip="Symmetry Theory of Valence (Johnson 2023, 'Qualia Formalism and a Symmetry Theory of Valence'): the proposal that how pleasant an experience feels tracks the mathematical symmetry of its neural representation. QRI operationalizes this on connectome harmonics via 'consonance' — whether the active harmonics stand in simple, mutually reinforcing frequency ratios, like musical consonance.">STV</span>)</div>
+        <p class="exp-aside-note">A niche, speculative theory of consciousness — included as a falsification probe, not a core claim.</p>
         <p class="exp-m"><b>Method:</b> score the <span class="term" tabindex="0" data-tip="Consonance: borrowed from music — a set of frequencies is consonant when their ratios are simple/reinforcing. We compute the Sethares sensory-dissonance of the harmonic power spectrum (treating spatial frequencies √λ as a chord). Lower dissonance = more consonant = more 'symmetric'.">consonance</span> / spectral symmetry of the connectome-harmonic spectrum (Sethares <span class="term" tabindex="0" data-tip="Dissonance: the opposite of consonance. Higher = the active harmonics clash rather than reinforce. We sum Sethares (1993) pairwise sensory dissonance over the spectrum.">dissonance</span>, <span class="term" tabindex="0" data-tip="Spectral entropy: how spread-out the harmonic power is across modes. Higher = a broader, flatter repertoire (less ordered/concentrated).">entropy</span>) — <b>paired test</b>, drug vs placebo.</p>
         <p class="exp-r"><span class="res-k">No — it gets <em>less</em> consonant.</span> Against the naive STV prediction, the harmonic spectrum becomes <b>more dissonant and broader</b> under LSD (the “entropic brain” direction).
           <span class="pills"><span class="pill sig">dissonance ↑ p=0.001</span><span class="pill sig">d_z=1.24</span><span class="pill sig">entropy ↑ p=0.007</span><span class="pill sig">holds after GSR + perm</span><span class="pill">psilocybin: same direction, n.s.</span></span>
@@ -204,7 +235,7 @@
     </div>
 
     <div class="hero-bottomline">
-      <b>Bottom line:</b> under LSD the harmonic repertoire reorganizes — less low-frequency, wiring-bound structure and a measurable drift toward smooth cortical-<em>shape</em> patterns. The psychedelic shift is a <b>within-subject effect significant at p&lt;0.001</b> across all 12 subjects, and it <b>survives nuisance regression</b> (global-signal + detrend + motion-proxy censoring) and an exact permutation null — so it is not merely a motion or global-signal artifact. It then <b>replicates in direction in an independent psilocybin cohort</b> (ds006072, n=7: same geometry-gains shift, d_z=0.87, exact-permutation p=0.031) — a different drug, scanner, and pipeline. Separately, a <b>harmonic-consonance probe</b> (a test of the Symmetry Theory of Valence) finds the spectrum becomes <b>less</b> consonant and broader under LSD (p=0.001, survives GSR + permutation) — the opposite of a naive “psychedelic = more symmetry” reading, and a reminder that “drifting toward the smooth geometric basis” is <em>not</em> the same as “becoming more consonant.” It remains a coarse, parcellated result, and the psilocybin replication is underpowered (n=7, active placebo).
+      <b>Bottom line:</b> under LSD the harmonic repertoire reorganizes — less low-frequency, wiring-bound structure and a measurable drift toward smooth cortical-<em>shape</em> patterns. The psychedelic shift is a <b>within-subject effect significant at p&lt;0.001</b> across all 12 subjects, and it <b>survives nuisance regression</b> (global-signal + detrend + motion-proxy censoring) and an exact permutation null — so it is not merely a motion or global-signal artifact. It then <b>replicates in direction in an independent psilocybin cohort</b> (ds006072, n=7: same geometry-gains shift, d_z=0.87, exact-permutation p=0.031) — a different drug, scanner, and pipeline. As a <b>speculative aside</b>, a harmonic-consonance probe (a falsification test of the niche <span class="term" tabindex="0" data-tip="Symmetry Theory of Valence (Johnson 2023): a speculative, non-mainstream proposal that pleasantness tracks the symmetry of a mind's representation. Included only as a testable corollary, not a core claim.">Symmetry Theory of Valence</span>) finds the spectrum becomes <b>less</b> consonant and broader under LSD (p=0.001, survives GSR + permutation) — the opposite of a naive “psychedelic = more symmetry” reading, and a reminder that “drifting toward the smooth geometric basis” is <em>not</em> the same as “becoming more consonant.” It remains a coarse, parcellated result, and the psilocybin replication is underpowered (n=7, active placebo).
     </div>
 
     <div class="hero-figs">
@@ -222,12 +253,12 @@
       </figure>
       <figure>
         <img src="lsd_results/harmonic_consonance.png" alt="Harmonic consonance, spectral entropy and centroid under LSD and psilocybin" loading="lazy" />
-        <figcaption><b>Experiment 4 (STV probe).</b> Harmonic consonance/symmetry, drug vs placebo. Under LSD the spectrum becomes more dissonant (p=0.001, d_z=1.24), broader (entropy p=0.007) and higher-frequency — the opposite of a naive “psychedelic = more symmetry” reading; psilocybin trends the same way (n=7, n.s.).</figcaption>
+        <figcaption><b>Exploratory aside (STV probe).</b> Harmonic consonance/symmetry, drug vs placebo. Under LSD the spectrum becomes more dissonant (p=0.001, d_z=1.24), broader (entropy p=0.007) and higher-frequency — the opposite of a naive “psychedelic = more symmetry” reading; psilocybin trends the same way (n=7, n.s.). <em>STV is a speculative, niche theory; this is a falsification probe, not a core result.</em></figcaption>
       </figure>
     </div>
 
     <div class="hero-foot">
-      <span class="hero-cta">↓ Scroll to run the simulator, explore the latent space, and inspect every result live &nbsp;·&nbsp; <a href="paper/connectome_harmonics_psychedelics.pdf" target="_blank" rel="noopener" style="color:#8ec5ff;">📄 Read the preprint (PDF)</a></span>
+      <span class="hero-cta">↑ Play with the live simulator above — explore the latent space and inspect every result &nbsp;·&nbsp; <a href="paper/connectome_harmonics_psychedelics.pdf" target="_blank" rel="noopener" style="color:#8ec5ff;">📄 Read the preprint (PDF)</a></span>
       <span class="hero-caveat">Group-average, parcellated (400 regions) research/education artifacts — not individual or clinical data, and not medical advice. The 400-region resolution is exactly where the geometry-vs-wiring gap is weakest, so Exp. 3 tests the LSD <em>shift</em>, not the broader debate (cf. Mansour 2024).</span>
     </div>
   </div>
@@ -239,9 +270,16 @@
         <h1>Connectome Harmonics Simulator</h1>
         <div class="subtitle" id="subtitle">Graph Laplacian eigenmodes as standing waves on a brain-like network</div>
       </div>
-      <div class="badge" id="dataBadge">loading…</div>
+      <div class="header-right">
+        <div class="badge" id="dataBadge">loading…</div>
+        <a class="ec-logo" href="https://www.edgecity.live/" target="_blank" rel="noopener" title="Edge City">
+          <span class="ec-label"><span class="ec-k">presented at</span><span class="ec-name">Edge City</span></span>
+          <img src="assets/edgecity_logo.svg" alt="Edge City" />
+        </a>
+      </div>
     </header>
     <canvas id="brain"></canvas>
+    <a class="scrollcue" href="#writeup">↓ findings, figures &amp; the paper</a>
     <div class="loading" id="loading">Loading connectome data…</div>
     <div class="hud">
       <div class="line"><span>mode</span><strong id="hudMode">1</strong></div>
@@ -253,7 +291,7 @@
   <aside class="sidebar">
     <div class="card findings" style="order:1">
       <h2>What this demonstrates</h2>
-      <p class="small">An interactive study of <strong>connectome harmonics</strong> on real human data — the HCP group-average structural connectome, a 12-subject LSD fMRI cohort (<a href="https://openneuro.org/datasets/ds003059" target="_blank" rel="noopener">OpenNeuro ds003059</a>), and an independent 7-subject psilocybin cohort for replication (<a href="https://openneuro.org/datasets/ds006072" target="_blank" rel="noopener">OpenNeuro ds006072</a>). Four questions are tested, each with a result you can inspect below:</p>
+      <p class="small">An interactive study of <strong>connectome harmonics</strong> on real human data — the HCP group-average structural connectome, a 12-subject LSD fMRI cohort (<a href="https://openneuro.org/datasets/ds003059" target="_blank" rel="noopener">OpenNeuro ds003059</a>), and an independent 7-subject psilocybin cohort for replication (<a href="https://openneuro.org/datasets/ds006072" target="_blank" rel="noopener">OpenNeuro ds006072</a>). Three questions are tested (plus one exploratory aside), each with a result you can inspect below:</p>
       <ol class="findings-list">
         <li>
           <span class="q">1. Does LSD reorganize the brain's harmonic spectrum?</span>
@@ -270,9 +308,9 @@
           <span class="a" id="findBasis">All bases are close; cortical shape (and a distance surrogate) do at least as well as wiring. Under LSD the geometric basis gains on the connectome.</span>
           <a class="jump" data-target="card-basis">see the curves ↓</a>
         </li>
-        <li>
-          <span class="q">4. Does the psychedelic brain get more “harmonious” (symmetry theory of valence)?</span>
-          <span class="a">No — the harmonic spectrum becomes <em>more</em> dissonant and broader under LSD (p=0.001, survives GSR), the opposite of the naive prediction; psilocybin trends the same way.</span>
+        <li class="finding-aside">
+          <span class="q">Exploratory aside. Does the psychedelic brain get more “harmonious” (the niche, speculative symmetry theory of valence)?</span>
+          <span class="a">No — the harmonic spectrum becomes <em>more</em> dissonant and broader under LSD (p=0.001, survives GSR), the opposite of the naive prediction; psilocybin trends the same way. Included as a falsification probe, not a core claim.</span>
           <a class="jump" data-target="card-consonance">see the consonance probe ↓</a>
         </li>
       </ol>
@@ -304,18 +342,19 @@
       <select id="model">
         <option value="eigen">single Laplacian harmonic</option>
         <option value="mix">standing-wave superposition</option>
-        <option value="kuramoto">coupled oscillator synchronization</option>
+        <option value="kuramoto" selected>coupled oscillator synchronization</option>
         <option value="lsd">LSD vs placebo (real fMRI spectra)</option>
       </select>
       <label for="mode">harmonic mode: <strong id="modeVal">1</strong></label>
       <input id="mode" type="range" min="1" max="40" step="1" value="1" />
       <div class="chips" id="chips"></div>
-      <label for="speed">speed: <strong id="speedVal">1.00×</strong></label>
-      <input id="speed" type="range" min="0" max="3" step="0.01" value="1" />
+      <label for="speed">speed: <strong id="speedVal">0.50×</strong></label>
+      <input id="speed" type="range" min="0" max="3" step="0.01" value="0.5" />
       <label for="amp">amplitude: <strong id="ampVal">1.00</strong></label>
       <input id="amp" type="range" min="0.05" max="2" step="0.01" value="1" />
       <label for="coupling">coupling K (oscillator view): <strong id="couplingVal">1.2</strong></label>
       <input id="coupling" type="range" min="0" max="4" step="0.01" value="1.2" />
+      <button id="oscHue" style="margin-top:12px;">oscillator colour: phase wheel</button>
       <div class="row" style="margin-top: 12px;">
         <button id="play">pause</button>
         <button id="reset">reset phases</button>
@@ -324,7 +363,8 @@
         <button id="edges">hide edges</button>
         <button id="png">export PNG</button>
       </div>
-      <div class="legend"><span class="small">−</span><div class="bar"></div><span class="small">+</span></div>
+      <div class="legend" id="signedLegend" style="display:none;"><span class="small">−</span><div class="bar"></div><span class="small">+</span></div>
+      <div class="legend" id="phaseLegend"><span class="small">0</span><div class="huebar"></div><span class="small">2π</span></div>
     </div>
 
     <div class="card" style="order:8">
@@ -398,13 +438,18 @@
         </div>
         <p class="small" id="basisCaption" style="margin-top:8px;color:#9fb0c6;"></p>
         <div class="lsd-callout small" id="basisFinding" style="margin-top:8px;"></div>
-        <p class="small" style="margin-top:6px;color:#6f7f96;">Caveat: parcellated (400 regions) — the regime where the geometric advantage is <em>weakest</em>; geometric modes are hemisphere-separable while connectome/EDR are whole-brain. The LSD shift <em>is</em> significance-tested (within-subject paired test + exact sign-flip permutation), <em>survives</em> nuisance regression (GSR + detrend + DVARS censoring), and <em>replicates in direction</em> on an independent psilocybin cohort (<a href="https://openneuro.org/datasets/ds006072" target="_blank" rel="noopener">ds006072</a>, n=7: Δ=+0.010, d_z=0.87, exact-permutation p=0.031; marginal after GSR) — so it is not merely a motion/global-signal artifact or a single-dataset fluke. A <em>vertex-resolution</em> check (fsaverage5-10k) confirms the geometric basis reconstructs activity efficiently off the parcellation, but also shows — honestly — that a fair geometry-vs-<em>wiring</em> test is not achievable at vertex resolution with public data (only a synthetic connectome surrogate exists), and that the geometry-vs-distance contrast shifts the <em>other</em> way at fine scale (Δ<sub>geo−EDR</sub>=−0.007, p=0.031): the effect is specific to the geometry-vs-wiring contrast. Remaining limits: no fmriprep motion parameters on the LSD raw dataset, modest cohorts (n=12 LSD, n=7 psilocybin with an active placebo), and the broader vertex-level geometry-vs-wiring debate stays open (cf. <a href="https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1" target="_blank" rel="noopener">Mansour et al. 2024</a>).</p>
+        <p class="small" style="margin-top:6px;color:#6f7f96;">Caveat: parcellated (400 regions) — the regime where the geometric advantage is <em>weakest</em>; geometric modes are hemisphere-separable while connectome/EDR are whole-brain. The LSD shift <em>is</em> significance-tested (within-subject paired test + exact sign-flip permutation), <em>survives</em> nuisance regression (GSR + detrend + DVARS censoring), and <em>replicates in direction</em> on an independent psilocybin cohort (<a href="https://openneuro.org/datasets/ds006072" target="_blank" rel="noopener">ds006072</a>, n=7: Δ=+0.010, d_z=0.87, exact-permutation p=0.031; marginal after GSR) — so it is not merely a motion/global-signal artifact or a single-dataset fluke. A <em>vertex-resolution</em> test (fsLR-32k, left cortex) using Pang's <em>empirical</em> high-resolution group-average tractography connectome (not a surrogate) confirms the core result off the parcellation: the geometric (shape) basis reconstructs cortical activity <em>better than the real connectome</em> in both states (PSIL geo 0.428 vs wiring 0.414; placebo 0.470 vs 0.460). The drug-induced shift toward geometry is in the <em>same direction</em> at vertex resolution but does not reach significance with n=7 (Δ=+0.004, d_z=0.47, perm p=0.20), so the psychedelic <em>shift</em> itself stays a parcellated-level finding while the geometry-over-wiring advantage now holds at full resolution with real wiring. (An earlier fsaverage5 check, where only a synthetic connectome surrogate ships, also showed the shift is specific to the geometry-vs-wiring contrast: geometry-vs-distance moved the other way, Δ<sub>geo−EDR</sub>=−0.007, p=0.031.) Remaining limits: no fmriprep motion parameters on the LSD raw dataset, modest cohorts (n=12 LSD, n=7 psilocybin with an active placebo), and the broader vertex-level geometry-vs-wiring debate stays open (cf. <a href="https://www.biorxiv.org/content/10.1101/2024.04.16.589843v1" target="_blank" rel="noopener">Mansour et al. 2024</a>).</p>
       </div>
       <img id="basisPlot" src="lsd_results/basis_comparison.png" alt="Reconstruction accuracy: connectome vs geometric vs EDR" style="width:100%;margin-top:10px;border-radius:12px;display:none;" />
+      <figure style="margin:16px 0 0;">
+        <img src="lsd_results/vertex_fslr_basis_comparison.png" alt="Vertex-resolution (fsLR-32k) geometry vs real empirical connectome on psilocybin" style="width:100%;border-radius:12px;" loading="lazy" />
+        <figcaption class="small" style="color:#9fb0c6;margin-top:6px;"><b>Vertex resolution (fsLR-32k, real wiring).</b> Geometry vs the <em>empirical</em> high-resolution group-average connectome (Pang 2023), on the same fsLR-32k cortex as the psilocybin CIFTIs — no parcellation, no surrogate. The geometric (shape) basis reconstructs activity <em>better than real wiring</em> in both psilocybin and placebo; the drug shift toward geometry is directionally consistent but underpowered at vertex level (n=7, Δ=+0.004, d_z=0.47, perm p=0.20).</figcaption>
+      </figure>
     </div>
 
-    <div class="card" id="card-consonance" style="order:3">
-      <h2>Harmonic consonance &amp; the symmetry theory of valence</h2>
+    <div class="card card-muted" id="card-consonance" style="order:3">
+      <h2>Harmonic consonance &amp; the symmetry theory of valence <span class="aside-badge">Exploratory aside</span></h2>
+      <p class="small" style="color:#9fb0c6;"><em>A speculative side-probe, not a core result.</em> The Symmetry Theory of Valence is a niche, non-mainstream theory of consciousness whose strong form is hard to falsify; we include it only because it yields one concrete, testable corollary — and that corollary fails in the predicted direction, which is itself the useful finding.</p>
       <p class="small">A natural follow-up: <em>does the degree of geometric/harmonic order correlate with positive affect?</em> The <a href="https://opentheory.net/2023/06/new-whitepaper-qualia-formalism-and-a-symmetry-theory-of-valence/" target="_blank" rel="noopener">Symmetry Theory of Valence</a> (Johnson 2023) proposes that how pleasant an experience feels tracks the <strong>symmetry</strong> of its neural representation; the Qualia Research Institute operationalizes this on connectome harmonics via <span class="term" tabindex="0" data-tip="Consonance (music → here): a set of frequencies is consonant when their ratios are simple and mutually reinforcing. We treat the spatial frequencies √λ of the active harmonics as a chord and sum the Sethares (1993) sensory dissonance; lower = more consonant = more 'symmetric'.">consonance</span>. We can't test the affect correlation directly — neither dataset ships per-subject mood ratings — but we can test the <em>mechanism direction</em>: does a psychedelic move the harmonic spectrum toward consonance/symmetry, or away?</p>
       <p class="small">For each subject and state we project BOLD onto the connectome harmonics, take the power per mode, and score the spectrum's Sethares <span class="term" tabindex="0" data-tip="Dissonance: the opposite of consonance — higher means the active harmonics clash rather than reinforce.">dissonance</span> (lower = more consonant), its <span class="term" tabindex="0" data-tip="Spectral entropy: how spread-out the power is across modes. Higher = broader, flatter repertoire.">spectral entropy</span> (breadth), and its spectral centroid (high vs low spatial frequency), then run the same within-subject paired test as Experiment 3.</p>
 
@@ -485,6 +530,8 @@ const ui = {
   modeVal: document.getElementById('modeVal'), speedVal: document.getElementById('speedVal'),
   ampVal: document.getElementById('ampVal'), couplingVal: document.getElementById('couplingVal'),
   play: document.getElementById('play'), reset: document.getElementById('reset'), edges: document.getElementById('edges'), png: document.getElementById('png'),
+  oscHue: document.getElementById('oscHue'),
+  signedLegend: document.getElementById('signedLegend'), phaseLegend: document.getElementById('phaseLegend'),
   chips: document.getElementById('chips'),
   hudMode: document.getElementById('hudMode'), hudLambda: document.getElementById('hudLambda'),
   hudEnergy: document.getElementById('hudEnergy'), hudTime: document.getElementById('hudTime'),
@@ -500,6 +547,7 @@ let t = 0, last = performance.now(), paused = false, showEdges = true;
 let field = new Float32Array(0);
 let theta = new Float32Array(0);
 let omega = new Float32Array(0);
+let oscHue = 'phase';   // 'signed' = diverging ±  |  'phase' = classic Kuramoto phase wheel
 let rngState = 123456789;
 let animStarted = false;
 let tourActive = false;
@@ -533,7 +581,10 @@ function resetPhases(){
   rngState = 123456789;
   for(let i=0;i<N;i++){
     theta[i] = (rand()*2-1)*Math.PI;
-    omega[i] = 0.65 + 0.25*(rand()*2-1) + 0.08*DATA.nodes[i][1];
+    // Strong spatial frequency gradient (posterior→anterior + left→right) keeps the
+    // oscillators partially locked into a travelling phase gradient — a persistent
+    // rainbow across the cortex — instead of collapsing to a single synchronized hue.
+    omega[i] = 0.5 + 0.85*DATA.nodes[i][1] + 0.45*DATA.nodes[i][0] + 0.12*(rand()*2-1);
   }
 }
 
@@ -570,6 +621,25 @@ function colorMap(v){
     b = Math.round(247*(1-a) + 32*a);
   }
   return `rgb(${r},${g},${b})`;
+}
+function hsv2rgb(h, s, v){
+  h = ((h % 1) + 1) % 1;
+  const i = Math.floor(h * 6), f = h * 6 - i;
+  const p = v*(1-s), q = v*(1-f*s), tt = v*(1-(1-f)*s);
+  let r, g, b;
+  switch(i % 6){
+    case 0: r=v; g=tt; b=p; break;
+    case 1: r=q; g=v;  b=p; break;
+    case 2: r=p; g=v;  b=tt; break;
+    case 3: r=p; g=q;  b=v; break;
+    case 4: r=tt; g=p; b=v; break;
+    default: r=v; g=p;  b=q;
+  }
+  return `rgb(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)})`;
+}
+// Classic Kuramoto view: map each oscillator's phase onto a cyclic hue wheel.
+function phaseColor(th){
+  return hsv2rgb(th / (2 * Math.PI), 0.72, 1.0);
 }
 
 function normalize(arr){
@@ -692,11 +762,13 @@ function draw(){
     }
   }
   ctx.globalAlpha = 1;
+  const phaseMode = (ui.model.value === 'kuramoto' && oscHue === 'phase');
   for(let i=0;i<N;i++){
     const val = field[i];
-    const r = (2.7 + 2.9*Math.min(1, Math.abs(val))) * DPR;
+    const r = (phaseMode ? (3.1 + 1.7*Math.min(1, Math.abs(val)))
+                         : (2.7 + 2.9*Math.min(1, Math.abs(val)))) * DPR;
     ctx.beginPath(); ctx.arc(X(i), Y(i), r, 0, 2*Math.PI);
-    ctx.fillStyle = colorMap(val);
+    ctx.fillStyle = phaseMode ? phaseColor(theta[i]) : colorMap(val);
     ctx.fill();
     ctx.lineWidth = 0.55*DPR;
     ctx.strokeStyle = 'rgba(10,15,22,.6)';
@@ -1051,6 +1123,12 @@ function syncLabels(){
   updateTourText();
 }
 
+function updateLegend(){
+  const phaseMode = (ui.model.value === 'kuramoto' && oscHue === 'phase');
+  if (ui.signedLegend) ui.signedLegend.style.display = phaseMode ? 'none' : 'flex';
+  if (ui.phaseLegend)  ui.phaseLegend.style.display  = phaseMode ? 'flex' : 'none';
+}
+
 function setMode(m){
   ui.mode.value = m;
   t = 0;
@@ -1098,7 +1176,13 @@ function bindControls(){
     ui.coupling.addEventListener(evt, syncLabels);
   });
   ui.mode.addEventListener('input', () => { if (!tourActive) t = 0; if (LSD) drawLsdChart(); });
-  ui.model.addEventListener('change', () => { if (ui.model.value === 'lsd') enterLsdMode(); });
+  ui.model.addEventListener('change', () => { if (ui.model.value === 'lsd') enterLsdMode(); updateLegend(); });
+  ui.oscHue.addEventListener('click', () => {
+    oscHue = oscHue === 'signed' ? 'phase' : 'signed';
+    ui.oscHue.textContent = oscHue === 'phase' ? 'oscillator colour: phase wheel' : 'oscillator colour: signed (±)';
+    updateLegend();
+  });
+  updateLegend();
   ui.play.addEventListener('click', () => { paused = !paused; ui.play.textContent = paused ? 'play' : 'pause'; });
   ui.reset.addEventListener('click', () => { t = 0; resetPhases(); });
   ui.edges.addEventListener('click', () => { showEdges = !showEdges; ui.edges.textContent = showEdges ? 'hide edges' : 'show edges'; });

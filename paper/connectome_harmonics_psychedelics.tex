@@ -62,10 +62,12 @@ regression and frame censoring ($p=0.002$, permutation $p=0.003$). We then
 cohort: the same direction and a large effect ($\Delta\mathrm{AUC}=+0.010$,
 $d_z=0.87$), significant by exact permutation and Wilcoxon tests ($p=0.031$),
 borderline parametrically ($t$-test $p=0.061$) and attenuating below threshold
-under aggressive denoising. A vertex-resolution check (fsaverage5-10k) confirms the
-geometric basis reconstructs activity efficiently off the parcellation, but shows
-that a fair geometry-versus-wiring test is not achievable at vertex resolution with
-public data and that the shift is specific to the geometry-vs-wiring contrast.
+under aggressive denoising. At vertex resolution (fsLR-32k), using Pang's
+\emph{empirical} high-resolution group-average connectome, the geometric basis
+reconstructs cortical activity better than the real connectome in both states,
+confirming the geometric advantage off the parcellation; the drug-induced shift is
+directionally consistent but underpowered ($n=7$) and not significant at vertex scale,
+so the shift itself remains a parcellated-level result.
 (4) \emph{Does the harmonic spectrum become more consonant/symmetric, as the
 Symmetry Theory of Valence would predict for a typically positively-valenced
 state?} Scoring the sensory dissonance, spectral entropy, and centroid of the
@@ -421,32 +423,64 @@ First, the \textbf{geometric basis reconstructs vertex BOLD efficiently}
 (AUC $\approx 0.32$--$0.34$), close to EDR ($\approx 0.30$--$0.32$): the geometry
 result is not an artifact of parcellation.
 
-Second, and reported in the interest of full honesty, a fair geometry-versus-\emph{wiring}
-test is \textbf{not possible at vertex resolution with public data}. The only
-publicly available connectome modes are a synthetic demo surrogate (degenerate
-spectrum, near-zero reconstruction), and real tractography connectome eigenmodes are
-not released at vertex resolution. The geometry-vs-wiring shift therefore remains a
-parcellated result. The contrast we \emph{can} evaluate at vertex resolution,
-geometry vs.\ EDR (shape vs.\ distance), shows a small but significant shift of the
-\emph{opposite} sign to the parcellated geometry-vs-connectome shift:
-$\Delta(\text{geometric}-\text{EDR})=-0.0067$, 95\% CI $[-0.011,-0.002]$,
+Second, at fsaverage5 the connectome modes bundled with Pang's demo are a synthetic
+surrogate (degenerate spectrum, near-zero reconstruction), so the only well-posed
+contrast \emph{there} is geometry vs.\ EDR (shape vs.\ distance). It shows a small but
+significant shift of the \emph{opposite} sign to the parcellated geometry-vs-connectome
+shift: $\Delta(\text{geometric}-\text{EDR})=-0.0067$, 95\% CI $[-0.011,-0.002]$,
 paired $t(6)=-3.55$ ($p=0.012$), Wilcoxon/permutation $p=0.031$, $d_z=-1.34$. The
 ``toward geometry'' effect is thus \emph{specific to the geometry-vs-wiring contrast}
-and does not generalize to geometry-vs-distance at fine scale; overall reconstruction
-also drops modestly under psilocybin for both bases. The parcellated headline is
-about cortical shape versus \emph{specific wiring}, not a blanket claim that geometry
-wins under psychedelics at every scale and contrast.
+and does not generalize to geometry-vs-distance at fine scale.
+
+\paragraph{Geometry versus the empirical connectome at vertex resolution.}
+The synthetic-surrogate limitation can in fact be overcome: the Pang et al.\
+\cite{pang2023} data release additionally provides the \emph{empirical}
+high-resolution group-average tractography connectome (an $S=255$ HCP average,
+$29{,}696\times29{,}696$ over the fsLR-32k left-hemisphere cortex). We compute its
+connectome-harmonic (normalized graph-Laplacian) eigenmodes directly and pit them
+against Pang's published fsLR-32k geometric eigenmodes, both evaluated on the same
+fsLR-32k grayordinates as the psilocybin CIFTI BOLD---so the data require no
+resampling. This yields a genuine geometry-versus-\emph{wiring} comparison at vertex
+resolution (Figure~\ref{fig:vertexfslr}). Two results follow. (i)~The
+\textbf{geometric basis reconstructs cortical activity better than the real connectome
+in both states} (mean AUC: psilocybin geometric $0.428$ vs.\ connectome $0.414$;
+methylphenidate $0.470$ vs.\ $0.460$), confirming the geometric advantage of
+\cite{pang2023} off the parcellation and with real wiring, and removing the parcellated
+near-tie. (ii)~The \textbf{drug-induced shift toward geometry is directionally
+consistent but not significant} at vertex resolution: per-subject
+$\mathrm{AUC}(\text{geometric})-\mathrm{AUC}(\text{connectome})$, psilocybin minus
+methylphenidate, $\Delta=+0.0040$, 95\% CI $[-0.0039,+0.0119]$, paired $t(6)=1.23$
+($p=0.26$), exact permutation $p=0.20$, $d_z=0.47$ (same direction after global-signal
+regression, $\Delta=+0.0037$, $p=0.31$). With $n=7$ the design is underpowered for an
+effect of this magnitude, so the psychedelic \emph{shift} remains a
+parcellated/LSD-level result, whereas the baseline geometry-over-wiring advantage now
+holds at full vertex resolution with the empirical connectome.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{vertex_basis_comparison.png}
-  \caption{\textbf{Vertex-resolution check (psilocybin, fsaverage5-10k, $n=7$, left
-  hemisphere).} Reconstruction accuracy under methylphenidate (left) and psilocybin
-  (middle) for the geometric and EDR bases (the public connectome basis is a synthetic
-  surrogate that reconstructs near zero and is shown only for reference). Right:
-  per-subject geometric$-$EDR advantage, which shifts slightly toward EDR under
-  psilocybin ($\Delta=-0.0067$, permutation $p=0.031$).}
+  \caption{\textbf{Vertex-resolution geometry vs.\ EDR (psilocybin, fsaverage5-10k,
+  $n=7$, left hemisphere).} Reconstruction accuracy under methylphenidate (left) and
+  psilocybin (middle) for the geometric and EDR bases (the public connectome basis at
+  fsaverage5 is a synthetic surrogate that reconstructs near zero and is shown only for
+  reference). Right: per-subject geometric$-$EDR advantage, which shifts slightly toward
+  EDR under psilocybin ($\Delta=-0.0067$, permutation $p=0.031$).}
   \label{fig:vertex}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{vertex_fslr_basis_comparison.png}
+  \caption{\textbf{Geometry vs.\ the empirical connectome at vertex resolution
+  (psilocybin, fsLR-32k, $n=7$, left-hemisphere cortex).} Reconstruction accuracy under
+  methylphenidate (left) and psilocybin (middle) for the geometric basis and the
+  connectome-harmonic basis computed from Pang's empirical $S255$ high-resolution
+  group-average tractography connectome. The geometric (shape) basis reconstructs
+  activity better than the real connectome in both states. Right: per-subject
+  geometric$-$connectome advantage, methylphenidate vs.\ psilocybin; the shift toward
+  geometry is directionally consistent but not significant at this sample size
+  ($\Delta=+0.0040$, $d_z=0.47$, permutation $p=0.20$).}
+  \label{fig:vertexfslr}
 \end{figure}
 
 \subsection{Experiment 4: harmonic consonance decreases under psychedelics}
@@ -522,9 +556,10 @@ weakest, and in which geometric modes are hemisphere-separable while connectome
 and EDR modes are whole-brain. We therefore frame Experiment 3 as a test of the
 drug-induced \emph{shift}, not as a resolution of the broader geometry-versus-wiring
 debate, which requires vertex-resolution surfaces and carefully constructed
-connectomes \cite{mansour2024}; our own vertex-resolution attempt
-(Section~3.5) confirms that a fair geometry-vs-wiring comparison is currently
-blocked by the absence of public real-connectome eigenmodes at that resolution.
+connectomes \cite{mansour2024}. Our vertex-resolution analysis (Section~3.5), using
+Pang's empirical group-average connectome at fsLR-32k, confirms the geometry-over-wiring
+\emph{advantage} at fine resolution, but with $n=7$ is underpowered to confirm the
+drug-induced \emph{shift}, which therefore stays a parcellated-level finding.
 The LSD data lack fmriprep motion parameters, so
 no full 24-parameter motion regression is possible; after denoising neither basis
 significantly beats the other within a single state (the claim is about the shift).

@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "dataset": "OpenNeuro ds006072 (psilocybin precision imaging)",
+    "analysis": "VERTEX-resolution Experiment 3 (geometry vs REAL wiring)",
+    "space": "fsLR-32k LH cortex (29,696 vtx, medial wall removed); ds006072 CIFTI grayordinates used natively (no resampling)",
+    "bases": "geometric (Pang 2023 fsLR-32k LBO eigenmodes) vs connectome (graph-Laplacian harmonics of Pang's S255 high-resolution group-average empirical tractography connectome)",
+    "n_subjects": 7,
+    "n_modes": 199,
+    "hemisphere": "left",
+    "cortex_vertices": 29696,
+    "connectome_note": "Empirical group-average connectome (S255 HCP), the real-wiring basis -- not the synthetic surrogate used in the fsaverage5 check. This is a genuine geometry-vs-wiring contrast at vertex resolution."
+  },
+  "n_modes_grid": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    10,
+    14,
+    20,
+    28,
+    40,
+    56,
+    80,
+    112,
+    160
+  ],
+  "curves": {
+    "psil": {
+      "geometric": [
+        0.09027159533330373,
+        0.12983155995607376,
+        0.17262611644608633,
+        0.18741952308586665,
+        0.20151289446013315,
+        0.22778221326214926,
+        0.26064368869577137,
+        0.28571724253041403,
+        0.3147873282432556,
+        0.3445389483656202,
+        0.3804451823234558,
+        0.41459278549466816,
+        0.4524646486554827,
+        0.48944433672087534,
+        0.5303703503949302
+      ],
+      "connectome": [
+        0.09417390929801124,
+        0.14038337022066116,
+        0.16971101292542048,
+        0.18430293032101222,
+        0.1989805166210447,
+        0.225788842354502,
+        0.2603348216840199,
+        0.2848251781293324,
+        0.3129417427948543,
+        0.3441445657185146,
+        0.3734263607433864,
+        0.40236312576702665,
+        0.43399875930377413,
+        0.4699419523988451,
+        0.5067923707621438
+      ]
+    },
+    "mtp": {
+      "geometric": [
+        0.08459378566060748,
+        0.12344394304922648,
+        0.17392138285296305,
+        0.19016286517892564,
+        0.20720437594822474,
+        0.23779437797410147,
+        0.27657470745699747,
+        0.30558179106031147,
+        0.3411129798207964,
+        0.3760750506605421,
+        0.4185996013028281,
+        0.4600358264786856,
+        0.5007366367748806,
+        0.539930271250861,
+        0.5810351286615644
+      ],
+      "connectome": [
+        0.09976561154638018,
+        0.15761509111949376,
+        0.18891942926815578,
+        0.2066080527646201,
+        0.22184527771813528,
+        0.2516092764479773,
+        0.28996901852743967,
+        0.31755934229918886,
+        0.3496819904872349,
+        0.38309369342667715,
+        0.4166022964886257,
+        0.4475146915231432,
+        0.4825257531234196,
+        0.5223870021956307,
+        0.5612659922667912
+      ]
+    }
+  },
+  "summary": {
+    "auc": {
+      "psil": {
+        "geometric": 0.4276115602486485,
+        "connectome": 0.41358273328756384
+      },
+      "mtp": {
+        "geometric": 0.4698325163832894,
+        "connectome": 0.45978318617377106
+      }
+    },
+    "paired": {
+      "metric": "per-subject AUC(geometric) - AUC(connectome), PSIL - MTP",
+      "n_subjects": 7,
+      "psil_minus_mtp_shift": {
+        "n": 7,
+        "mean_a": 0.01402882696108462,
+        "mean_b": 0.010049330209518283,
+        "mean_diff": 0.003979496751566336,
+        "sd_diff": 0.008531701728935007,
+        "ci95": [
+          -0.003911011318356916,
+          0.011870004821489588
+        ],
+        "t": 1.2340748753705193,
+        "p_ttest": 0.26331654590944137,
+        "w": 6.0,
+        "p_wilcoxon": 0.21875,
+        "cohen_dz": 0.4664364599233461,
+        "perm": {
+          "p": 0.203125,
+          "n_perms": 128,
+          "exact": true,
+          "observed_mean": 0.003979496751566336
+        }
+      }
+    },
+    "robustness": {
+      "denoise": "detrend + GSR(+deriv) + DVARS censoring",
+      "mean_frames_kept_frac": 0.9307749838274845,
+      "denoised_shift": {
+        "n": 7,
+        "mean_a": 0.013116790071292914,
+        "mean_b": 0.009370363317592731,
+        "mean_diff": 0.0037464267537001827,
+        "sd_diff": 0.008756030587921168,
+        "ci95": [
+          -0.004351550907681457,
+          0.011844404415081822
+        ],
+        "t": 1.1320327625492022,
+        "p_ttest": 0.30082483907206264,
+        "w": 9.0,
+        "p_wilcoxon": 0.46875,
+        "cohen_dz": 0.42786816652608894,
+        "perm": {
+          "p": 0.3125,
+          "n_perms": 128,
+          "exact": true,
+          "observed_mean": 0.0037464267537001827
+        }
+      },
+      "survives_nuisance_regression": false
+    },
+    "replicates_parcellated_direction": false
+  }
+}

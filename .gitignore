@@ -14,6 +14,8 @@ lsd_results/*
 !lsd_results/vertex_basis_comparison.png
 !lsd_results/harmonic_consonance.json
 !lsd_results/harmonic_consonance.png
+!lsd_results/vertex_fslr_basis_comparison.json
+!lsd_results/vertex_fslr_basis_comparison.png
 
 # LaTeX build artifacts
 paper/*.aux
