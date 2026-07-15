@@ -160,6 +160,7 @@ def normalized_laplacian_modes(w: np.ndarray, n_modes: int) -> tuple[np.ndarray,
 def build_payload(
     w: np.ndarray,
     nodes: np.ndarray,
+    coords_ras: np.ndarray,
     networks: list[str],
     hemis: list[str],
     n_modes: int,
@@ -171,6 +172,10 @@ def build_payload(
 
     return {
         "nodes": np.round(nodes, 4).tolist(),
+        # 3D anatomical node coordinates (MNI RAS, millimetres). Consumers that
+        # want a true 3D layout (e.g. the embers dot cloud) sample these instead
+        # of the flattened 2D `nodes`.
+        "nodes3d": np.round(coords_ras, 4).tolist(),
         "edges": edges,
         "eigvals": np.round(eigvals, 6).tolist(),
         "modes": np.round(eigvecs.T, 4).tolist(),
@@ -228,7 +233,7 @@ def main() -> None:
     nodes = project_nodes(coords)
 
     payload = build_payload(
-        w, nodes, networks, hemis, args.modes, args.edge_percentile, args.source
+        w, nodes, coords, networks, hemis, args.modes, args.edge_percentile, args.source
     )
     args.output.write_text(json.dumps(payload, separators=(",", ":")))
     print(f"Wrote {args.output}")
